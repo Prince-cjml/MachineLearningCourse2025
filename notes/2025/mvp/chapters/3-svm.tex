@@ -339,7 +339,713 @@ This principle is known as \textbf{Structural Risk Minimization} (SRM).
 \begin{problem}
 \begin{enumerate}
     \item What if the dataset is not linearly separable?
-    \item Wht if $\gamma$ too small because of outliers?
+    \item What if $\gamma$ too small because of outliers?
 \end{enumerate}
 \end{problem}
+
+\section{Dual Form Of SVM}
+\subsection{Preliminaries from Convex Analysis*}
+\begin{tcolorbox}
+    \vspace{0.5em}
+        \color{red!50!black}$\circledast   $\quad\emph{\textbf{This subsection is included out of personal interest and is not part of the course material. 
+        Readers who wish to focus solely on the course content may safely skip to the next subsection.}}
+    \vspace{0.5em}
+\end{tcolorbox}
+Given a constrained optimization problem
+\begin{equation}
+\begin{aligned}
+\min_{x \in \mathbb{R}^n} & \quad f(x) \\
+\text{s.t.} & \quad g_i(x) \le 0, \quad i = 1,\dots,m,\\
+& \quad h_j(x) = 0, \quad j = 1,\dots,p,
+\end{aligned}
+\end{equation}
+we define the \emph{Lagrangian function} as
+\begin{equation}
+\mathcal{L}(x, \lambda, \nu)
+= f(x) + \sum_{i=1}^{m} \lambda_i g_i(x)
+  + \sum_{j=1}^{p} \nu_j h_j(x),
+\end{equation}
+where $\lambda_i \ge 0$ are the Lagrange multipliers associated with inequality constraints,
+and $\nu_j \in \mathbb{R}$ correspond to equality constraints.
+\begin{definition}[Lagrangian Dual Function]
+The \emph{dual function} of a lagrangian function is defined by taking the infimum over the primal variable:
+\begin{equation}
+\theta(\lambda, \nu) = \inf_{x} \mathcal{L}(x, \lambda, \nu).
+\end{equation}
+\end{definition}
+
+The function $\theta(\lambda, \nu)$ provides a lower bound on the optimal value of the primal problem,
+because for any feasible $x$ and $\lambda \ge 0$,
+\begin{equation}
+\theta(\lambda, \nu) \le f(x).
+\end{equation}
+
+\begin{definition}[Lagrangian Dual Problem]
+The \emph{dual problem} seeks the tightest possible lower bound on the primal optimum by maximizing $\theta(\lambda, \nu)$:
+\begin{equation}
+\begin{aligned}
+\max_{\lambda, \nu} \quad & \theta(\lambda, \nu) \\
+\text{s.t.} \quad & \lambda_i \ge 0, \quad i = 1,\dots,m.
+\end{aligned}
+\end{equation}
+Equivalently,
+\begin{equation}
+\max_{\lambda \ge 0, \nu}\ \inf_{x}\ \mathcal{L}(x,\lambda,\nu).
+\end{equation}
+\end{definition}
+
+This formulation swaps the order of minimization and maximization,
+producing a problem in terms of the dual variables $(\lambda, \nu)$ instead of $x$.
+The resulting problem is always a \emph{concave maximization}, even if the primal is nonconvex.
+\begin{theorem}[Weak Duality]
+For any feasible $x$ and any $\lambda \ge 0$, $\nu \in \mathbb{R}^p$, we have
+\begin{equation}
+\theta(\lambda, \nu) \le f(x).
+\end{equation}
+Consequently, if $p^*$ and $d^*$ denote the optimal values of the primal and dual problems respectively,
+then
+\begin{equation}
+d^* \le p^*.
+\end{equation}
+\end{theorem}
+\begin{proposition}[Slater’s Condition]
+    Consider the convex optimization problem:
+    \begin{equation}
+        \begin{aligned}
+            \min_{x \in \mathbb{R}^n} \quad & f(x) \\
+            \text{s.t.} \quad & g_i(x) \le 0, \quad i = 1, \ldots, m, \\
+            & h_j(x) = 0, \quad j = 1, \ldots, p,
+        \end{aligned}
+    \end{equation}
+    where $f$ and all $g_i$ are convex functions, and each $h_j$ is affine.
+
+    If there exists a point $\bar{x}$ (called a \emph{strictly feasible point}) such that
+    \begin{equation}
+        g_i(\bar{x}) < 0, \quad i = 1, \ldots, m,
+        \qquad
+        h_j(\bar{x}) = 0, \quad j = 1, \ldots, p,
+    \end{equation}
+    then the problem satisfies \textbf{Slater’s condition}.
+\end{proposition}
+Slater’s condition ensures that the feasible region of a convex optimization problem is not degenerate.  
+It requires that there exists at least one point that \emph{strictly} satisfies all inequality constraints (that is, $x\in\mathrm{Int}(C)$).  
+
+Geometrically, this means the feasible set has a \emph{non-empty interior}.  
+If such a point $\bar{x}$ exists, the constraint surfaces do not touch or overlap in a pathological way, and the optimizer has enough space to operate smoothly.  
+Under this mild regularity assumption, the duality gap between the primal and dual problems vanishes, leading to \textbf{strong duality}.
+
+\begin{theorem}[Strong Duality]
+If the primal problem is convex and satisfies the \emph{Slater condition} (i.e., there exists a strictly feasible point $x$ such that $g_i(x) < 0$ and $h_j(x) = 0$),
+then
+\begin{equation}
+d^* = p^*.
+\end{equation}
+That is, the dual problem attains the same optimal value as the primal problem.
+\end{theorem}
+\begin{proof}
+    Consider the convex optimization problem:
+    \begin{equation}
+        \begin{aligned}
+            \min_{x \in \mathbb{R}^n} \quad & f(x) \\
+            \text{s.t.} \quad & A x \le b, \\
+            & C x = d,
+        \end{aligned}
+    \end{equation}
+    where $f:\mathbb{R}^n \to \mathbb{R} \cup \{+\infty\}$ is a closed and convex function, and the constraints are linear.
+
+    The Lagrangian is defined as
+    \begin{equation}
+        \mathcal{L}(x, \lambda, \nu)
+        = f(x) + \lambda^\top (A x - b) + \nu^\top (C x - d),
+        \qquad \lambda \ge 0.
+    \end{equation}
+    The dual function is given by
+    \begin{equation}
+        g(\lambda, \nu) = \inf_{x} \, \mathcal{L}(x, \lambda, \nu),
+    \end{equation}
+    and the dual problem is
+    \begin{equation}
+        \max_{\lambda \ge 0, \nu} \, g(\lambda, \nu).
+    \end{equation}
+
+    Weak duality always holds:
+    \begin{equation}
+        g(\lambda, \nu) \le f(x), \qquad \forall x \text{ feasible},\ \lambda \ge 0, \nu.
+    \end{equation}
+    Hence, $d^* \le p^*$.
+
+    Now, suppose there exists a strictly feasible point $\bar{x}$ such that
+    \begin{equation}
+        A \bar{x} < b, \qquad C \bar{x} = d.
+    \end{equation}
+    This satisfies the {Slater’s condition}.  
+    By the \emph{strong duality theorem} in convex optimization (also derived from Fenchel– Rockafellar duality), there exists a saddle point $(x^*, \lambda^*, \nu^*)$ such that
+    \begin{equation}
+        \mathcal{L}(x^*, \lambda, \nu) \le \mathcal{L}(x^*, \lambda^*, \nu^*) \le \mathcal{L}(x, \lambda^*, \nu^*),
+        \qquad \forall x, \lambda \ge 0, \nu.
+    \end{equation}
+    From this saddle-point condition, the minimax equality follows:
+    \begin{equation}
+        \min_{x} \max_{\lambda \ge 0, \nu} \mathcal{L}(x, \lambda, \nu)
+        = \max_{\lambda \ge 0, \nu} \min_{x} \mathcal{L}(x, \lambda, \nu),
+    \end{equation}
+    which implies
+    \begin{equation}
+        p^* = d^*.
+    \end{equation}
+    Hence, strong duality holds.
+\end{proof}
+
+\noindent
+\begin{remark}
+Strong duality implies that solving the dual problem is equivalent to solving the primal one,
+often with additional computational and theoretical advantages, as in the case of Support Vector Machines (SVMs).
+\end{remark}
+\begin{lemma}[Gordan's Lemma]
+    \label{thm:3.14}
+    Define the function
+    \begin{equation}
+        f(x) = \ln \sum_{i=1}^{m} e^{\langle a_i, x \rangle},
+    \end{equation}
+    where $\{a_i\}_{i=1}^{m}$ are vectors in $\mathbb{R}^n$.  
+    The following statements are equivalent:
+    \begin{enumerate}[(a)]
+        \item $f(x)$ is bounded from below;
+        \item there exists $\lambda \in \mathbb{R}^m$, $\lambda \ge 0$, $\lambda \ne 0$, such that
+        \begin{equation}
+            \sum_{i=1}^{m} \lambda_i a_i = 0;
+        \end{equation}
+        \item there exists no $x$ satisfying
+        \begin{equation}
+            \langle a_i, x \rangle < 0, \quad i = 1, \ldots, m.
+        \end{equation}
+    \end{enumerate}
+    \end{lemma}
+    Moreover, the result can be generalized to a broader class of problems that also involve equality constraints.
+\begin{theorem}[Motzkin's transposition theorem]
+    Let $\{a_i\}_{i=1}^{l}$, $\{b_j\}_{j=1}^{m}$, and $\{c_k\}_{k=1}^{p}$ be vectors in $\mathbb{R}^n$, and let $\{\alpha_i\}_{i=1}^{l}$, $\{\beta_j\}_{j=1}^{m}$, and $\{\gamma_k\}_{k=1}^{p}$ be scalars.  
+    Then the linear system
+    \begin{equation}
+    \begin{aligned}
+        \langle a_i, x \rangle &< \alpha_i, && i = 1, \ldots, l,\\
+        \langle b_j, x \rangle &\le \beta_j, && j = 1, \ldots, m,\\
+        \langle c_k, x \rangle &= \gamma_k, && k = 1, \ldots, p,
+    \end{aligned}
+    \tag{3.7}
+    \end{equation}
+    is inconsistent if and only if there exist vectors (multipliers) 
+    \begin{equation}
+        \lambda_0 \in \mathbb{R},\quad 
+    \lambda \in \mathbb{R}^{l},\quad 
+    \mu \in \mathbb{R}^{m},\quad 
+    \delta \in \mathbb{R}^{p},
+    \end{equation}
+    satisfying
+    \begin{equation}
+    \begin{aligned}
+        \sum_{i=1}^{l} \lambda_i a_i 
+        + \sum_{j=1}^{m} \mu_j b_j 
+        + \sum_{k=1}^{p} \delta_k c_k &= 0,\\[4pt]
+        \sum_{i=1}^{l} \lambda_i \alpha_i 
+        + \sum_{j=1}^{m} \mu_j \beta_j 
+        + \sum_{k=1}^{p} \delta_k \gamma_k 
+        + \lambda_0 &= 0,\\[4pt]
+        (\lambda_0, \lambda, \mu) &\ge 0,\qquad
+        (\lambda_0, \lambda) \ne 0.
+    \end{aligned}
+    \tag{3.8}
+    \end{equation}
+    \end{theorem}
+\begin{definition}[Hilbert Space]
+    A \textbf{Hilbert space} is a complete inner product space.  
+    % Formally, let $\mathcal{H}$ be a vector space over $\mathbb{R}$ or $\mathbb{C}$ endowed with an inner product
+    % \begin{equation}
+    %     \langle \cdot, \cdot \rangle : \mathcal{H} \times \mathcal{H} \to \mathbb{R} \text{ (or } \mathbb{C}\text{)}.
+    % \end{equation}
+    % The inner product induces a norm
+    % \begin{equation}
+    %     \|x\| = \sqrt{\langle x, x \rangle}, \quad x \in \mathcal{H}.
+    % \end{equation}
+    % The space $\mathcal{H}$ is said to be \emph{complete} if every Cauchy sequence $\{x_n\}$ in $\mathcal{H}$ converges to a limit $x \in \mathcal{H}$:
+    % \begin{equation}
+    %     \forall\, \{x_n\} \subset \mathcal{H},\quad 
+    %     \|x_n - x_m\| \to 0 \text{ as } n,m \to \infty
+    %     \ \Rightarrow\ 
+    %     \exists\, x \in \mathcal{H},\ \|x_n - x\| \to 0.
+    % \end{equation}
+    % Hence, a Hilbert space is a vector space that is both equipped with an inner product and complete under the induced norm.
+\end{definition}
+
+\subsection{Dual Theory in the SVM Problem}
+
+Under the intuition provided by the Lagrangian formulation, we can define the primal objective as
+\begin{equation}
+    p^* = \argmin_{w,b}\ \argmax_{\alpha \ge 0} L(w,b,\alpha),
+\end{equation}
+where the Lagrangian $L$ is defined as
+\begin{equation}
+    L(w,b,\alpha)
+    = \frac{1}{2}\|w\|^2
+    + \sum_{i \in [n]} \alpha_i (1 - y_i(w^\top x_i + b))
+    = \frac{1}{2}\|w\|^2
+    + \sum_{i \in [n]} \alpha_i
+    - \sum_{i \in [n]} \alpha_i y_i (w^\top x_i + b).
+\end{equation}
+
+We claim that:
+\begin{proposition}
+    $p^*$ corresponds to the solution of the primal SVM problem.
+\end{proposition}
+
+To justify this, suppose the claim were false.  
+Assume that some constraint is not satisfied, that is, there exists an index $i$ violating the constraint such that
+\begin{equation}
+    1 - y_i(w^\top x_i + b) > 0.
+\end{equation}
+Then the inner maximization problem
+\begin{equation}
+    \theta_p(w,b) := \argmax_{\alpha \ge 0} L(w,b,\alpha)
+\end{equation}
+can be driven to infinity, since the corresponding Lagrange multiplier $\alpha_i > 0$ can be increased arbitrarily to make $L(w,b,\alpha)$ unbounded above. Consequently,
+\begin{equation}
+    \argmin_{w,b}\, \theta_p(w,b) = \argmin_{w,b}\, \infty
+\end{equation}
+has no valid solution. Therefore, the initial assumption must be false, and the optimal dual variables $\alpha^*$ enforce all constraints to hold with equality or non-violation. Hence, the dual solution indeed corresponds to the optimal solution of the primal problem.
+\vspace{1em}
+
+Consider a convex region defined by the constraint set $C$.  
+We claim that for all $x_i \in \mathrm{Int}(C)$, that is, points located strictly inside the feasible region where all constraints are satisfied, the corresponding $\alpha_i$ is always set to $0$.  
+For all $x_i \in \partial C = \bar{C} - \mathrm{Int}(C)$, where the constraints become active, $\alpha_i$ may take positive values. 
+
+As a conclusion, regardless of which region the data points fall into, the following condition holds at the optimal solution due to the {complementary slackness} property in the KKT conditions:
+\begin{equation}
+    \sum_{i \in [n]} \alpha_i \big(1 - y_i(w^\top x_i + b)\big) = 0.
+\end{equation}
+This does not represent an algebraic identity but a structural condition satisfied at optimality.  
+It implies that only the points lying exactly on the margin (the {support vectors}) contribute to the decision boundary, while all others have $\alpha_i = 0$.  
+Therefore, at the optimum, the objective effectively reduces to minimizing $\|w\|^2$.
+
+Define the dual problem of $p^*$ as follows:
+\begin{equation}
+    d^* = \argmax_{\alpha \ge 0}\ \argmin_{w,b} L(w,b,\alpha),
+\end{equation}
+where $p^*$ is a min–max problem, while the dual problem is formulated as a max–min problem.
+
+\begin{theorem}[Weak Duality]
+    \begin{equation}
+        d^* \le p^*.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    By the definition of the $\argmin$ (or equivalently, the infimum), we have
+    \begin{align}
+        d^* = \argmax_{\alpha \ge 0}\ \argmin_{w,b} L(w,b,\alpha)
+        \ \le\ \argmax_{\alpha \ge 0}\ L(w,b,\alpha)
+    \end{align}
+    for every $(w,b)$.  
+
+    We may then choose the best $(w,b)$ that minimizes the right-hand side, i.e.,
+    \begin{equation}
+        d^* \le \argmin_{w,b}\ \argmax_{\alpha \ge 0} L(w,b,\alpha) = p^*.
+    \end{equation}
+\end{proof}
+
+Weak duality always holds because no additional assumptions or constraints have been introduced in the argument above.
+
+Here is another proof of the weak duality theorem:
+\begin{proof}
+    Assume that $(w_p, b_p)$ is the optimal solution to the primal problem, and that $\alpha_d$ is the optimal solution to the dual problem. Then we have
+    \begin{align*}
+        p^*
+        &= \argmin_{w,b}\ \argmax_{\alpha \ge 0} L(w,b,\alpha)
+         = \argmax_{\alpha \ge 0}\ L(w_p, b_p, \alpha) \\
+        &\ge L(w_p, b_p, \alpha_d)
+         \ge \argmin_{w,b}\ L(w,b,\alpha_d) \\
+        &= \argmax_{\alpha \ge 0}\ \argmin_{w,b}\ L(w,b,\alpha)
+         = d^*.
+    \end{align*}
+\end{proof}
+
+\begin{remark}
+    We study the dual problem because, in many cases, it is analytically or computationally easier to solve than the original primal problem.
+\end{remark}
+
+Weak duality only constrains the lower bound of the original problem.  
+Is there a better situation for $d^*$ if we include more conditions?  
+The answer is yes.  
+\href{https://stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf}{Click here for more information.}  
+
+We claim that, for convex objectives, if all the constraints are linear functions, then the \textbf{Strong Duality} holds, where
+\begin{equation}
+    d^* = p^*.
+\end{equation}
+
+\begin{remark}
+    For completeness, I provide a brief proof in the previous subsection. 
+    % (adapted from \emph{Optimization and Convex Analysis}).
+\end{remark}
+
+In the strong duality case, the inequalities in the second proof of the weak duality theorem become equalities.  
+That is, the intermediate solutions $(w,b)$ in the dual problem are also optimal for the primal problem.  
+Equivalently, the solutions of the dual and primal problems are \textbf{consistent} under strong duality.
+
+Now, lets explicitly solve the dual problem under strong duality.
+\begin{solution}
+\begin{equation}
+    \max_{\alpha \ge 0} \min_{w,b} L(w,b,\alpha)
+    = \max_{\alpha \ge 0} \min_{w,b} 
+      \Bigg( \frac{1}{2}\|w\|^2 + \sum_{i \in [n]} \alpha_i (1 - y_i (w^\top x_i + b)) \Bigg)
+\end{equation}
+To find the inner minimization over $w,b$, we apply the KKT stationarity conditions:
+\begin{align}
+    \frac{\partial L}{\partial w} &= w - \sum_{i \in [n]} \alpha_i y_i x_i = 0
+    \Rightarrow\quad w = \sum_{i \in [n]} \alpha_i y_i x_i, \\
+    \frac{\partial L}{\partial b} &= -\sum_{i \in [n]} \alpha_i y_i = 0
+    \Rightarrow\quad \sum_{i \in [n]} \alpha_i y_i = 0.
+\end{align}
+{Substitute back into $L(w,b,\alpha)$.}
+Plugging $w = \sum_i \alpha_i y_i x_i$ into $L$, we obtain:
+\begin{align}
+    L(w,b,\alpha)
+    &= \frac{1}{2}\|w\|^2 + \sum_{i \in [n]} \alpha_i (1 - y_i(w^\top x_i + b)) \\
+    &= \frac{1}{2}
+        \Bigg\|
+            \sum_{i \in [n]} \alpha_i y_i x_i
+        \Bigg\|^2
+        + \sum_{i \in [n]} \alpha_i
+        - \sum_{i \in [n]} \alpha_i y_i 
+            \Bigg(\sum_{j \in [n]} \alpha_j y_j x_j^\top x_i + b\Bigg).
+\end{align}
+which follows the constraints:
+\begin{equation}
+    \alpha\ge 0,\quad \sum_{i}\alpha_i y_i=0
+\end{equation}
+
+Simplify $L$ using $\sum_i \alpha_i y_i = 0$, we have
+\begin{align}
+    L(w,b,\alpha)
+    &= \sum_{i \in [n]} \alpha_i
+       - \frac{1}{2}
+         \sum_{i \in [n]} \sum_{j \in [n]}
+         \alpha_i \alpha_j y_i y_j x_i^\top x_j.
+         \label{equ:3.50}
+\end{align}
+
+Thus, the SVM dual problem becomes:
+\begin{equation}
+    \boxed{
+    \begin{aligned}
+        \argmax_{\alpha \ge 0}\quad
+        & W(\alpha)
+        = \sum_{i \in [n]} \alpha_i
+        - \frac{1}{2}
+          \sum_{i,j \in [n]} \alpha_i \alpha_j y_i y_j x_i^\top x_j,\\
+        \text{s.t.}\quad
+        & \sum_{i \in [n]} \alpha_i y_i = 0.
+    \end{aligned}}
+\end{equation}
+Let $\alpha^*$ be the optimization solution of the uppon problem. Under strong duality, the optimal $\alpha^*$ gives rise to the optimal $w^*$ and $b^*$ through:
+\begin{equation}
+    w^* = \sum_{i \in [n]} \alpha_i^* y_i x_i,
+    \qquad
+    b^* = y_i - w^{*\top}x_i
+    \quad \text{for any support vector } \alpha_i^* > 0.
+\end{equation}
+We can confirm whether $(x_i,y_i)$ is support vector by checking whether $\alpha_i^*$ is positive (o.w. is zero). Thus:
+\begin{equation}
+    w^* = \sum_{i \in \mathrm{S.V.}s} \alpha_i^* y_i x_i,
+    \qquad
+    b^* = y_i - w^{*\top}x_i
+    \quad \text{for any support vector } \alpha_i^* > 0.
+\end{equation}
+\end{solution}
+\begin{note}
+    At this point, the reasoning effectively reproduces Gordan’s Lemma within the derivation process. I provided a brief discussion in the previous subsection.
+\end{note}
+Thus, an SVM model can be fully reconstructed from its support vectors and their corresponding coefficients $\alpha_i^*$.  
+For any test point $x$, the prediction depends solely on the support vectors and their weights:
+\begin{equation}
+    f(x) = w^{*\top}x + b^*
+    = \sum_{i \in \mathrm{S.V.}} \alpha_i^* y_i \, {\color{red}(x_i^\top x)} + b^* > 0.
+    \label{equ:3.57}
+\end{equation}
+The red term in the equation above measures the \emph{similarity} between the test point $x$ and each support vector $x_i$.  
+
+To capture non-linear relationships, we can replace this inner product with a more general \textbf{kernel function} $K(x_i, x)$, thereby mapping the data into a higher-dimensional feature space while preserving computational efficiency. We will discuss kernel tricks in the next section.
+\vspace{1em}
+
+We now introduce the practical algorithm commonly used in training SVMs: the \textbf{Sequential Minimal Optimization} (SMO) method.  
+The main idea is to iteratively update a small subset of dual variables $\alpha_i$ while keeping all others fixed.  
+
+However, because of the equality constraint
+\begin{equation}
+    \sum_{i=1}^{n} \alpha_i y_i = 0,
+\end{equation}
+if we fix $(n-1)$ of the $\alpha_j$, the remaining one $\alpha_i$ is automatically determined, leaving no degree of freedom.  
+To overcome this, SMO randomly selects a pair $(\alpha_i, \alpha_j)$ and optimizes them jointly while keeping all other $\alpha_k$ (for $k \neq i, j$) fixed.  
+Under this setup, the equality constraint becomes
+\begin{equation}
+    \alpha_i y_i + \alpha_j y_j 
+    {\color{red} = -\sum_{k \neq i,j} \alpha_k y_k}
+    = \text{constant}.
+\end{equation}
+Hence, $\alpha_j$ can be expressed as a linear function of $\alpha_i$, and the original optimization problem reduces to a one-dimensional quadratic programming problem in $\alpha_i$, which is convex (positive semidefinite).  
+
+This reduction admits a \textbf{closed-form solution}, allowing efficient updates of the chosen pair $(\alpha_i, \alpha_j)$.  
+
+By repeating this process iteratively over different pairs, the algorithm converges to the optimal solution of the dual problem.
+\section{Kernel}
+In the previous section, we only considered linearly separable datasets, which is not always satisfied in general cases.
+
+For example, consider a one-dimensional separation problem that cannot be separated by a single point (a one-dimensional plane); we can introduce an extra dimension to transform the dataset into a linearly separable one.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{../../tikz/3/4.pdf}
+\end{figure}
+
+That is, we want to find a function $\varphi$ that maps $\mathbb{R}^d \mapsto \mathbb{R}^{d'}$ to help the separation machine complete its work.  
+For instance, for a two-dimensional input $(x_1, x_2)$, we can define the mapping
+\begin{equation}
+    \varphi(x) := (1, x_1, x_2, x_1^2, x_2^2, x_1 x_2) \in \mathbb{R}^6,
+\end{equation}
+which makes several implicit features in $\mathbb{R}^2$ explicit.
+
+We can then calculate the similarity between $x_1$ and $x_2$ through their transformed features $\varphi(x)$ in \eqref{equ:3.57}:
+\begin{equation}
+    f(x) = w^{*\top} x + b^*
+    = \sum_{i \in \mathrm{S.V.}} \alpha_i^* y_i {\color{red}(\varphi(x_i)^\top \varphi(x))} + b^* > 0.
+    \label{equ:3.60}
+\end{equation}
+Correspondingly, for \eqref{equ:3.50}, the dual objective becomes
+\begin{equation}
+    L
+    = \sum_{i \in [n]} \alpha_i
+    - \frac{1}{2}
+      \sum_{i,j \in [n]} \alpha_i \alpha_j y_i y_j
+      \langle \varphi(x_i), \varphi(x_j) \rangle.
+    \label{equ:3.61}
+\end{equation}
+
+Calculating the inner product in the high-dimensional feature space may be computationally expensive, as it often requires complex and high-order operations.  
+Therefore, we define a \textbf{kernel function} that allows us to compute the inner product in the high-dimensional space indirectly, using only the original input vectors:
+\begin{equation}
+    K(x_i, x_j) := \langle \varphi(x_i), \varphi(x_j) \rangle.
+\end{equation}
+
+\begin{definition}[Kernel Function]
+    A function $K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is called a \textbf{kernel function} if there exists a Hilbert space $\mathcal{H}$ and a mapping 
+    \begin{equation}
+        \phi : \mathcal{X} \to \mathcal{H}
+    \end{equation}
+    such that for all $x, x' \in \mathcal{X}$,
+    \begin{equation}
+        K(x, x') = \langle \phi(x), \phi(x') \rangle_{\mathcal{H}}.
+    \end{equation}
+    
+    \end{definition}
+
+    In the previous example, the kernel corresponding to $\varphi(x)$ can be written as
+    \begin{equation}
+        K(x, z) = (x^\top z + 1)^2.
+    \end{equation}
+    We can easily verify this claim:
+    \begin{align*}
+        K(x, z)
+        &= (x_1 z_1 + x_2 z_2 + 1)^2 \\
+        &= \langle (1, \sqrt{2}x_1, \sqrt{2}x_2, x_1^2, x_2^2, \sqrt{2}x_1 x_2),\,
+                   (1, \sqrt{2}z_1, \sqrt{2}z_2, z_1^2, z_2^2, \sqrt{2}z_1 z_2) \rangle.
+    \end{align*}
+    Thus, we have effectively reduced the computational complexity from $O(d')$ to $O(d)$, thereby saving computational resources.
+    
+    The dual formulation in \eqref{equ:3.61} can then be simplified using the kernel function:
+\begin{equation}
+    L
+        = \sum_{i \in [n]} \alpha_i
+        - \frac{1}{2}
+          \sum_{i,j \in [n]} \alpha_i \alpha_j y_i y_j K(x_i,x_j)
+\end{equation}
+
+We now consider a new question: what kind of function $K$ can be regarded as a valid kernel?  
+Mercer’s Theorem provides the precise answer to this problem.
+\begin{theorem}[Mercer’s Theorem (Finite case)]
+    A symmetric function $K(x, x')$ is a valid kernel if and only if, for any finite set $\{x_1, \dots, x_n\} \subset \mathcal{X}$, the Gram matrix 
+    \begin{equation}
+        \mathbf{K}_{ij} = K(x_i, x_j)
+    \end{equation}
+    is positive semidefinite, i.e.
+    \begin{equation}
+        \forall c \in \mathbb{R}^n, \quad c^\top \mathbf{K} c \ge 0.
+    \end{equation}
+\end{theorem}
+    \begin{proof}
+        In the finite-dimensional case.Let $\{x_1, \dots, x_n\} \subset \mathcal{X}$ be any finite subset, and 
+        define the Gram matrix $\mathbf{K} \in \mathbb{R}^{n \times n}$ by
+        \begin{equation}
+            \mathbf{K}_{ij} = K(x_i, x_j), \qquad i,j = 1,\dots,n.
+        \end{equation}
+        Since $K$ is symmetric, we have $\mathbf{K} = \mathbf{K}^\top$.
+        
+        By the spectral theorem for real symmetric matrices, 
+        there exists an orthonormal basis of eigenvectors 
+        $\{v_1, \dots, v_n\}$ and corresponding real eigenvalues 
+        $\lambda_1, \dots, \lambda_n$ such that
+        \begin{equation}
+            \mathbf{K} = V \Lambda V^\top,
+        \end{equation}
+        where $V = [v_1,\dots,v_n]$ is orthogonal and 
+        $\Lambda = \operatorname{diag}(\lambda_1,\dots,\lambda_n)$.
+        
+        The kernel $K$ being positive semidefinite implies that
+        for all $c \in \mathbb{R}^n$,
+        \begin{equation}
+            c^\top \mathbf{K} c 
+        = \sum_{i,j} c_i K(x_i, x_j) c_j \ge 0,
+        \end{equation}
+        which in turn implies $\lambda_i \ge 0$ for all $i$.
+        
+        Now, define feature functions 
+        \begin{equation}
+            \phi_i(x_j) = \sqrt{\lambda_i}\, v_i(j),
+        \end{equation}
+        i.e.\ the $j$-th component of $v_i$ scaled by $\sqrt{\lambda_i}$.
+        Then for any $x_p, x_q \in \{x_1, \dots, x_n\}$,
+        \begin{align}
+        K(x_p, x_q)
+        &= \mathbf{K}_{pq}
+         = \sum_{i=1}^n \lambda_i v_i(p) v_i(q)
+         = \sum_{i=1}^n \phi_i(x_p)\, \phi_i(x_q).
+        \end{align}
+        
+        Hence, in the finite-dimensional case,
+        $K$ can be written as an inner product
+        \begin{equation}
+            K(x_p, x_q) = \langle \phi(x_p), \phi(x_q) \rangle,
+        \qquad 
+        \phi(x) = (\phi_1(x), \dots, \phi_n(x))^\top.
+        \end{equation}
+
+        This directly establishes the Mercer expansion in the finite case,
+        and the general (infinite-dimensional) theorem follows by 
+        taking the limit as $n \to \infty$.
+        \end{proof}
+        \begin{theorem}[Mercer’s Theorem]
+            Let $\mathcal{X} \subset \mathbb{R}^n$ be a compact set, and let 
+            $K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ 
+            be a continuous, symmetric function.
+            
+            Then $K$ is a \textbf{kernel} 
+            if and only if there exists an orthonormal basis 
+            $\{\phi_i\}_{i=1}^{\infty}$ of $L^2(\mathcal{X})$ 
+            and a sequence of non-negative eigenvalues 
+            $\{\lambda_i\}_{i=1}^{\infty}$, $\lambda_i \ge 0$, 
+            such that for all $x, x' \in \mathcal{X}$,
+            \begin{equation}
+                K(x, x') = \sum_{i=1}^{\infty} 
+                \lambda_i\, \phi_i(x)\, \phi_i(x'),
+            \end{equation}
+            where the series converges absolutely and uniformly on $\mathcal{X} \times \mathcal{X}$. That is, $K$ is positive semi-definite.
+            
+            Equivalently, for any square-integrable function $f \in L^2(\mathcal{X})$,
+            \begin{equation}
+                \iint_{\mathcal{X}\times\mathcal{X}} 
+                f(x) K(x, x') f(x')\,dx\,dx' 
+                = \sum_{i=1}^{\infty} \lambda_i 
+                  \Big(\int_{\mathcal{X}} f(x) \phi_i(x)\,dx\Big)^2
+                \ge 0.
+            \end{equation}
+            \end{theorem}
+        Here are some commonly used kernels:
+        \begin{enumerate}
+            \item \textbf{Linear kernel}: simply applies the inner product in the original space,
+            \begin{equation}
+                K(x, z) = x^\top z;
+            \end{equation}
+            \item \textbf{Polynomial kernel}: maps $\mathbb{R}^n \to \mathbb{R}^{\scriptsize\begin{pmatrix}n+p\\p\end{pmatrix}}$,
+            \begin{equation}
+                K(x, z) = (x^\top z + 1)^p;
+            \end{equation}
+            \item \textbf{Gaussian / RBF kernel (Radial Basis Function)}:
+            \begin{equation}
+                K(x, z) = \exp\!\left(-\frac{\|x - z\|^2}{2\sigma^2}\right).
+            \end{equation}
+        \end{enumerate}
+        
+        \begin{remark}
+            The RBF kernel can be intuitively understood as measuring the similarity between two vectors based on their Euclidean distance.
+        \end{remark}
+        
+        The RBF kernel makes any dataset linearly separable, as it effectively maps $x$ and $z$ into an \textbf{infinite-dimensional} Hilbert space before taking their inner product, thus providing a powerful tool for nonlinear classification.
+        
+        This property follows directly from the Taylor expansion of the exponential function, noting that the polynomial basis is complete.
+
+\begin{remark}
+    \begin{align}
+        \text{Taylor Expansion:} \quad 
+        f(x) &= f(0) + f'(0)\,x + \frac{1}{2!} f''(0)\,x^2 
+              + \frac{1}{3!} f^{(3)}(0)\,x^3 + \cdots \\[6pt]
+        %
+        k(x,z) &= \exp\!\left(-\frac{\|x\|^2}{2\sigma^2}\right)
+                  \exp\!\left(-\frac{\|z\|^2}{2\sigma^2}\right)
+                  \exp\!\left(\frac{x^\top z}{\sigma^2}\right) \\[6pt]
+        %
+        &= \exp\!\left(-\frac{\|x\|^2}{2\sigma^2}\right)
+            \exp\!\left(-\frac{\|z\|^2}{2\sigma^2}\right)
+            \left[\,1
+            + \frac{x^\top z}{\sigma^2}
+            + \frac{1}{2!}\!\left(\frac{x^\top z}{\sigma^2}\right)^2
+            + \frac{1}{3!}\!\left(\frac{x^\top z}{\sigma^2}\right)^3
+            + \cdots \right]
+        \end{align}
+\end{remark}
+The only hyperparameter introduced here is $\sigma^2$, which determines the rate at which higher-order polynomial terms decay.  
+A larger $\sigma^2$ implies a faster decay of these terms.  
+Thus, $\sigma^2$ effectively controls the dimensionality of the feature space involved in the inner product.
+
+\begin{proposition}
+    The RBF kernel enables nonlinear classification.
+\end{proposition}
+
+The above proposition follows from the behavior of the RBF kernel as $\sigma^2 \to 0^+$.  
+In this limit, only the data point $x_i$ closest to $x$ contributes significantly to the kernel value, since its exponential decay is the slowest.  
+In other words, the RBF kernel behaves almost like a \textbf{1-NN (nearest neighbor)} classifier in this regime.
+
+To demonstrate the extraordinary capability of the RBF kernel, we note that it can represent \textbf{multiply connected}, or even \textbf{disconnected}, decision regions:
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.9]{../../tikz/3/5.pdf}
+\end{figure}
+
+However, this expressive power also comes with a significant risk of \textbf{overfitting}.
+
+\vspace{1em}
+
+We have now solved the non-linearly separable problem mentioned at the end of the last section, and we arrive at the next challenge: the presence of outliers.
+
+To address this issue, we introduce the concept of \textbf{slack variables}.  
+The idea is intuitive yet powerful — instead of forcing every data point to lie strictly on the correct side of the margin, we allow some samples to \emph{violate} the margin constraint slightly, while penalizing these violations in the objective function.  
+
+Formally, we define non-negative variables
+\begin{equation}
+    \xi_i \ge 0, \quad i = 1, \ldots, n,
+\end{equation}
+called \emph{slack variables}, representing the amount by which each sample fails to satisfy the margin condition.  
+The optimization problem then becomes
+\begin{equation}
+\begin{aligned}
+    \min_{w,b,\xi} \quad & \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i, \\
+    \text{s.t.} \quad & y_i(w^\top x_i + b) \ge 1 - \xi_i, \quad i = 1, \ldots, n, \\
+    & \xi_i \ge 0, \quad i = 1, \ldots, n.
+\end{aligned}
+\end{equation}
+where \(C > 0\) is a hyperparameter controlling the trade-off between maximizing the margin and minimizing classification errors.  
+
+In this way, the model, known as the \textbf{Soft-Margin SVM}, allows small violations of the margin to achieve a better balance between robustness and generalization. This is the most commonly used form of SVM in practice.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics{../../tikz/3/3.pdf}
+%     \caption{Hinge loss and CE loss.}
+%     \label{3-svm}
+% \end{figure}
 \end{document}
