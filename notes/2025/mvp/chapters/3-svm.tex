@@ -281,7 +281,7 @@ If $\gamma_i > 0$, the point $x_i$ is correctly classified.
 
 Define the margin
 \begin{equation}
-    \gamma = \min_{i \in [n]} \gamma_i
+    \gamma = \argmin_{i \in [n]} \gamma_i
 \end{equation}
 and the SVM optimization problem can be formalized as
 \begin{equation}
@@ -354,7 +354,7 @@ This principle is known as \textbf{Structural Risk Minimization} (SRM).
 Given a constrained optimization problem
 \begin{equation}
 \begin{aligned}
-\min_{x \in \mathbb{R}^n} & \quad f(x) \\
+\argmin_{x \in \mathbb{R}^n} & \quad f(x) \\
 \text{s.t.} & \quad g_i(x) \le 0, \quad i = 1,\dots,m,\\
 & \quad h_j(x) = 0, \quad j = 1,\dots,p,
 \end{aligned}
@@ -384,13 +384,13 @@ because for any feasible $x$ and $\lambda \ge 0$,
 The \emph{dual problem} seeks the tightest possible lower bound on the primal optimum by maximizing $\theta(\lambda, \nu)$:
 \begin{equation}
 \begin{aligned}
-\max_{\lambda, \nu} \quad & \theta(\lambda, \nu) \\
+\argmax_{\lambda, \nu} \quad & \theta(\lambda, \nu) \\
 \text{s.t.} \quad & \lambda_i \ge 0, \quad i = 1,\dots,m.
 \end{aligned}
 \end{equation}
 Equivalently,
 \begin{equation}
-\max_{\lambda \ge 0, \nu}\ \inf_{x}\ \mathcal{L}(x,\lambda,\nu).
+\argmax_{\lambda \ge 0, \nu}\ \inf_{x}\ \mathcal{L}(x,\lambda,\nu).
 \end{equation}
 \end{definition}
 
@@ -412,7 +412,7 @@ d^* \le p^*.
     Consider the convex optimization problem:
     \begin{equation}
         \begin{aligned}
-            \min_{x \in \mathbb{R}^n} \quad & f(x) \\
+            \argmin_{x \in \mathbb{R}^n} \quad & f(x) \\
             \text{s.t.} \quad & g_i(x) \le 0, \quad i = 1, \ldots, m, \\
             & h_j(x) = 0, \quad j = 1, \ldots, p,
         \end{aligned}
@@ -446,7 +446,7 @@ That is, the dual problem attains the same optimal value as the primal problem.
     Consider the convex optimization problem:
     \begin{equation}
         \begin{aligned}
-            \min_{x \in \mathbb{R}^n} \quad & f(x) \\
+            \argmin_{x \in \mathbb{R}^n} \quad & f(x) \\
             \text{s.t.} \quad & A x \le b, \\
             & C x = d,
         \end{aligned}
@@ -465,7 +465,7 @@ That is, the dual problem attains the same optimal value as the primal problem.
     \end{equation}
     and the dual problem is
     \begin{equation}
-        \max_{\lambda \ge 0, \nu} \, g(\lambda, \nu).
+        \argmax_{\lambda \ge 0, \nu} \, g(\lambda, \nu).
     \end{equation}
 
     Weak duality always holds:
@@ -486,8 +486,8 @@ That is, the dual problem attains the same optimal value as the primal problem.
     \end{equation}
     From this saddle-point condition, the minimax equality follows:
     \begin{equation}
-        \min_{x} \max_{\lambda \ge 0, \nu} \mathcal{L}(x, \lambda, \nu)
-        = \max_{\lambda \ge 0, \nu} \min_{x} \mathcal{L}(x, \lambda, \nu),
+        \argmin_{x} \argmax_{\lambda \ge 0, \nu} \mathcal{L}(x, \lambda, \nu)
+        = \argmax_{\lambda \ge 0, \nu} \argmin_{x} \mathcal{L}(x, \lambda, \nu),
     \end{equation}
     which implies
     \begin{equation}
@@ -693,8 +693,8 @@ Equivalently, the solutions of the dual and primal problems are \textbf{consiste
 Now, lets explicitly solve the dual problem under strong duality.
 \begin{solution}
 \begin{equation}
-    \max_{\alpha \ge 0} \min_{w,b} L(w,b,\alpha)
-    = \max_{\alpha \ge 0} \min_{w,b} 
+    \argmax_{\alpha \ge 0} \argmin_{w,b} L(w,b,\alpha)
+    = \argmax_{\alpha \ge 0} \argmin_{w,b} 
       \Bigg( \frac{1}{2}\|w\|^2 + \sum_{i \in [n]} \alpha_i (1 - y_i (w^\top x_i + b)) \Bigg)
 \end{equation}
 To find the inner minimization over $w,b$, we apply the KKT stationarity conditions:
@@ -1033,7 +1033,7 @@ called \emph{slack variables}, representing the amount by which each sample fail
 The optimization problem then becomes
 \begin{equation}
 \begin{aligned}
-    \min_{w,b,\xi} \quad & \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i, \\
+    \argmin_{w,b,\xi} \quad & \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i, \\
     \text{s.t.} \quad & y_i(w^\top x_i + b) \ge 1 - \xi_i, \quad i = 1, \ldots, n, \\
     & \xi_i \ge 0, \quad i = 1, \ldots, n.
 \end{aligned}
