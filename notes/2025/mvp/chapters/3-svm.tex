@@ -3,21 +3,21 @@
 
 \chapter{Support Vector Machine}
 \begin{introduction}
-\item Conditioned optimization
+\item Constrained optimization
 \item Inequality optimization
 \item KKT condition
 \item Support Vector Machine
 \end{introduction}
 Support Vector Machine (SVM) is also a binary classification model, often introduced as an alternative to logistic regression, since—as we have discussed in the previous chapter—logistic regression has several notable limitations. SVM provides an elegant framework that allows us to transfer powerful results and intuition from optimization theory into machine learning.
-\section{Conditioned Optimization}
+\section{Constrained Optimization}
 Unlike the unconstrained optimization problems we studied earlier, the support vector machine is originally formulated as a \textbf{constrained optimization problem}. This distinction is fundamental. In mathematics, unconstrained optimization is defined as:
 \begin{equation}
     \argmin_x f(x)
 \end{equation}
-When we deal with constrained optimization, we add an auxiliary constraint $h(x)=0$ (where both $f(x)$ and $g(x)$ are differentiable). Considering the geometric meaning of the gradient, we observe:
+When we deal with constrained optimization, we add an auxiliary constraint $h(x)=0$ (where both $f(x)$ and $h(x)$ are differentiable). Considering the geometric meaning of the gradient, we observe:
 
 \begin{enumerate}
-    \item For any point on the surface defined by $g(x)$, the gradient $\nabla g(x)$ must be orthogonal to the surface.
+    \item For any point on the surface defined by $h(x)$, the gradient $\nabla h(x)$ must be orthogonal to the surface.
     \item For any critical point $x^*$ that achieves a local minimum, the gradient $\nabla f(x^*)$ must also be orthogonal to the surface.
 \end{enumerate}
 
@@ -151,7 +151,7 @@ Following the same steps as in the equality-constrained case, we obtain:
     If $x^*$ is a local minimum point, then
     \begin{equation}
         \begin{cases}
-            \nabla L(x^*, \mu) = 0, \\
+            \nabla_x L(x^*, \mu) = 0, \\
             g(x^*) \leq 0, \\
             \mu \geq 0, \\
             \mu \cdot g(x^*) = 0.
@@ -178,7 +178,7 @@ In this setting, a local minimum $x^*$ must satisfy a series of conditions known
     If $x^*$ is a local minimum point, then there exist multipliers $(\lambda, \mu)$ such that
     \begin{equation}
         \begin{cases}
-            \nabla L(x^*, \lambda, \mu) = 0, & \\
+            \nabla_x L(x^*, \lambda, \mu) = 0, & \\
             h_i(x^*) = 0, & \forall i \in [k],  \\
             g_j(x^*) \leq 0, & \forall j \in [l], \\\
             \mu_j \geq 0, & \forall j \in [l], \\
@@ -191,7 +191,7 @@ In most cases, the above conditions cannot be solved explicitly in closed form.
 
 \section{Support Vector Machine}
 \subsection{Hard Margin}
-Consider a linearly separable dataset $\{(x_i, y_i)\}$ with $y_i \in \{0,1\}$, and a linear model
+Consider a linearly separable dataset $\{(x_i, y_i)\}$ with $y_i \in \{-1,1\}$, and a linear model
 \begin{equation}
     f(x) = w^\top x + b
 \end{equation}
@@ -221,8 +221,9 @@ Here, the \emph{margin} refers to the distance from a point to the hyperplane, w
 \end{remark}
 
 \begin{remark}
-    Note that the interpretation of $b$ differs between the two cases $y = w^\top x + b$ and $0 = w^\top x + b$.  
-    In the latter, we can observe that $|b| = \|w\| \|x_0\|$, which corresponds to the offset determined by $x_0$.
+    Note that the interpretation of $b$ differs between the two cases, $y = w^\top x + b_f$ and $0 = w^\top x + b_e$. 
+    We denote $b_f$ as the bias in the functional form and $b_e$ as the bias in the implicit equation form to distinguish between the two. 
+    In the latter case, we observe that $|b_e| = \|w\| \|x_0\|$, which represents the offset determined by the reference point $x_0$.
 \end{remark}
 The distance between a datapoint and the hyperplane is given by:
 \begin{theorem}
@@ -238,32 +239,36 @@ Geometrically, we obtain:
     \includegraphics{../../tikz/3/1.pdf}
     \label{2-lr}
 \end{figure}
+\begin{proof}
+    \begin{enumerate}
+        \item Consider
+        \[
+            \begin{cases}
+                x_0 + \Delta x \dfrac{w}{\|w\|} = x, \\
+                w^\top x_0 + b = 0,
+            \end{cases}
+        \]
+        so that
+        \begin{align*}
+            &w^\top x_0 + w^\top \Delta x \frac{w}{\|w\|} = w^\top x\\
+            \Rightarrow\quad& -b + w^\top \Delta x \frac{w}{\|w\|} = w^\top x\\
+            \Rightarrow\quad& \Delta x \|w\| = w^\top x + b
+        \end{align*}
+        This matches exactly the expression we obtained in \eqref{3.15}.
+        
+        \item From the Lagrangian perspective:
+        \begin{align*}
+            \argmin_{x_0}\frac{1}{2}\|x-x_0\|^2&\quad s.t.\; w^\top x_0+b\quad\Rightarrow\quad L(x_0,\lambda)=\frac{1}{2}\|x-x_0\|^2+\lambda(w^\top x_0+b)\\
+            &\Rightarrow\quad\begin{cases}
+                \nabla_{x_0}L(x_0,\lambda)&=0\quad\Rightarrow\quad x_0-x+\lambda w=0\\
+                \nabla_\lambda\ L(x_0,\lambda)&=0\quad\Rightarrow \quad w^\top x_0+b=0
+            \end{cases}
+        \end{align*}
+        This leads to the same solution as above.
+    \end{enumerate}
+\end{proof}
 
-\begin{enumerate}
-    \item Consider
-    \[
-        \begin{cases}
-            x_0 + \Delta x \dfrac{w}{\|w\|} = x, \\
-            w^\top x_0 + b = 0,
-        \end{cases}
-    \]
-    so that
-    \begin{align*}
-        w^\top x_0 + w^\top \Delta x \frac{w}{\|w\|} &= w^\top x\\
-        -b + w^\top \Delta x \frac{w}{\|w\|} &= w^\top x\\
-        \Delta x \|w\| &= w^\top x + b
-    \end{align*}
-    This matches exactly the expression we obtained in \eqref{3.15}.
-    
-    \item From the Lagrangian perspective:
-    \begin{align*}
-        \argmin_{x_0}\frac{1}{2}\|x-x_0\|^2\quad\Rightarrow\quad L(x_0,\lambda)&=\frac{1}{2}\|x-x_0\|^2+\lambda(w^\top x_0+b)\\
-        s.t.\; w^\top x_0+b\quad \quad\quad\nabla_{x_0}L(x_0,\lambda)&=0\quad\Rightarrow\quad x_0-x+\lambda w=0\\
-        \nabla_xL(x_0,\lambda)&=0\quad\Rightarrow \quad w^\top x_0+b=0
-    \end{align*}
-    This leads to the same solution as above.
-\end{enumerate}
-When $\Delta > 0$, the point $x$ lies on the positive side of the hyperplane;  
+When $\Delta:={(w^\top x + b)}/{\|w\|} > 0$, the point $x$ lies on the positive side of the hyperplane;  
 when $\Delta = 0$, $x$ lies exactly on the hyperplane;  
 and when $\Delta < 0$, $x$ lies on the negative side.  
 
@@ -284,8 +289,8 @@ and the SVM optimization problem can be formalized as
     \quad \text{s.t. } \forall i, \; \frac{y_i (w^\top x_i + b)}{\|w\|} \geq \gamma
 \end{equation}
 
-This formulation seems problematic, since $\gamma$ is not independent.  
-To resolve this, suppose $(x_0, y_0)$ is a point achieving the minimum margin $\gamma_i$.  
+This formulation is problematic, since $\gamma$ is not an independent variable but is defined as the minimum of the $\gamma_i$'s. 
+To resolve this, suppose $(x_0, y_0)$ is a point achieving the minimum margin $\gamma$.  
 Then
 \begin{equation}
     \gamma = \frac{y_0 (w^\top x_0 + b)}{\|w\|}
@@ -309,7 +314,7 @@ Since the functional margin alone has no intrinsic meaning, it is natural to res
     \centering
     \includegraphics{../../tikz/3/2.pdf}
     \caption{Support Vector Machine.}
-    \label{2-lr}
+    \label{3-svm}
 \end{figure}
 This yields the primal form of the SVM optimization problem:
 \begin{equation}
@@ -326,10 +331,10 @@ In other words, the goal is to separate the dataset correctly while ensuring a s
 This principle is known as \textbf{Structural Risk Minimization} (SRM).
 
 \begin{remark}
-    Unlike logistic regression, datapoint far from separate hyperplane won't contribute loss. That is, only small subset of dataset is active as a constraint.
+    Unlike logistic regression, datapoints far from separating hyperplane do not contribute loss. That is, only small subset of dataset is active as a constraint.
 \end{remark}
 \begin{proposition}
-    SVM is a convex quadratic programming, and we can solve it in poltnomial time with standard package.
+    SVM is a convex quadratic programming problem, which can be solved in polynomial time with standard packages.
 \end{proposition}
 \begin{problem}
 \begin{enumerate}
