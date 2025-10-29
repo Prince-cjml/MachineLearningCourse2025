@@ -1,9 +1,9 @@
 \documentclass[../main]{subfiles}
 \begin{document}
 
-\chapter{Representation Theorem}
+\chapter{Representer Theorem}
 \begin{introduction}
-    \item Representation Theorem
+    \item Representer Theorem
     \item Dual form of Linear Regression
 \end{introduction}
 \section{Revisit the Preliminaries}
@@ -31,14 +31,14 @@ The objective function can then be rewritten as:
 \begin{remark}
     There is a minor difference between the above expression and the original SVM formulation:  
     the bias term $b$ can be absorbed into $w$ by augmenting the input vector with an additional dimension (e.g., appending $x_0 = 1$).  
-    Further discussion could be held here.%
+    % Further discussion could be held here.%
 \end{remark}
 
 By rewriting the $\mathrm{Hinge}\bigl(f(x_i)\bigr)$ term in terms of the slack variables $\xi_i$,  
 we can derive the dual formulation of the soft-margin SVM:
 \begin{equation}
-    \arg\max_{\alpha \ge 0,\, \beta \ge 0}\;
-    \arg\min_{w,b}
+    \argmax_{\alpha \ge 0,\, \beta \ge 0}\;
+    \argmin_{w,b}
     \left[
         \sum_{i \in [n]} \xi_i
         + \frac{\lambda}{2} w^\top w
@@ -137,7 +137,9 @@ Substituting this representation into the prediction function gives:
     f(x) = w^\top \varphi(x) = \sum_{i \in [n]} \alpha_i\, k(x_i, x),
 \end{equation}
 
-The uppon observation brings us an insight that the \emph{representation} and the kernel trick may have some deeper relationships which ultilize every regression models we mentioned befor.
+The above observation suggests a deeper connection between \emph{representation} and the \emph{kernel trick}.  
+It shows that all the regression models we have discussed so far can be interpreted as  
+special cases of the same underlying idea.
 \section{Representation Theorem}
 We have already defined the concept of a \emph{Hilbert space} in Definition~\ref{def:3.4}.  
 Building upon that foundation, we now introduce the notion of a \textbf{Reproducing Kernel Hilbert Space (RKHS)},  
@@ -176,15 +178,45 @@ itself can be decomposed as
     k(x, x') = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\phi_i(x'),
 \end{equation}
 where $\{\sqrt{\lambda_i}\,\phi_i\}$ forms a complete orthonormal basis in the RKHS.
+\begin{theorem}[Mercer’s Theorem]
+    Let $k(x, x')$ be a continuous, symmetric, and positive semi-definite kernel function  
+    defined on a compact domain $\mathcal{X} \subset \mathbb{R}^d$.  
+    Then there exists an orthonormal basis of eigenfunctions  
+    $\{\phi_i\}_{i=1}^{\infty}$ in $L^2(\mathcal{X})$ and a sequence of non-negative eigenvalues  
+    $\{\lambda_i\}_{i=1}^{\infty}$ such that
+    \begin{equation}
+        k(x, x') = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\, \phi_i(x'),
+    \end{equation}
+    where the series converges absolutely and uniformly.
+\end{theorem}
+This result shows that any Mercer kernel defines a compact, self-adjoint, and positive 
+    operator $\mathcal{T}_k$ on $L^2(\mathcal{X})$:
+    \begin{equation}
+        (\mathcal{T}_k f)(x) = \int_{\mathcal{X}} k(x, x')\, f(x')\, dx'.
+    \end{equation}
+    The eigenfunctions $\{\phi_i\}$ and eigenvalues $\{\lambda_i\}$ then form the spectral 
+    decomposition of $\mathcal{T}_k$.
 
-Consequently, every function in the RKHS can be approximated arbitrarily well by finite
-linear combinations of kernel sections $k(x_i, \cdot)$, since these functions span a
-dense subspace of $\mathcal{H}$.  
-That is,
-\begin{equation}
-    f = \sum_{i=1}^{\infty} \alpha_i\, k(x_i, \cdot),
-\end{equation}
-where the series converges in the Hilbert norm.
+
+    \begin{proposition}
+        The RKHS $\mathcal{H}_k$ associated with $k$ can be realized as the completion of the span of the kernel sections
+        \begin{equation}
+            \mathcal{H}_0 = \mathrm{span}\langle\,k(x, \cdot)\mid x \in \mathcal{X}\,\rangle.
+        \end{equation}
+        Each $k(x, \cdot)$ can itself be expanded in the eigenbasis $\{\color{red}\phi_i\color{black}\}$ as
+        \begin{equation}
+            k(x, \cdot) = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\, \color{red}\phi_i\color{black}(\cdot).
+        \end{equation}
+    \end{proposition}
+
+    Consequently, every function in the RKHS can be approximated arbitrarily well by 
+    finite linear combinations of kernel sections $k(x_i, \cdot)$, since these functions span a 
+    dense subspace of $\mathcal{H}_k$.  
+    That is,
+    \begin{equation}
+        f = \sum_{i=1}^{\infty} \alpha_i\, k(x_i, \cdot),
+    \end{equation}
+    where the series converges in the Hilbert norm.
     \end{note}
     \begin{note}
         I have not listed the properties of the inner product here, as they should be familiar to anyone with basic mathematical knowledge, although Prof. Zhang presented them in detail during class for the sake of completeness.
@@ -206,21 +238,7 @@ Briefly, an RKHS is a space in which the value of a function at any point can be
     These kernel sections $k(x_i, \cdot)$ thus play a role analogous to partially contracted
     tensors: each retains one free variable and collectively they span the functional space.
 \end{note}
-\begin{note}
-        This property of the kernel function bears a striking resemblance to the idea of
-        \emph{tensor contraction}.  
-        In tensor analysis, a multivariate tensor can be transformed into a new object by
-        contracting over one or more indices, effectively ``fixing'' certain variables while
-        leaving others free.  
-        Likewise, in the context of RKHS, a kernel $k(x, x')$ can be viewed as a bivariate
-        function that, once one argument (say $x_i$) is fixed, induces a new function
-        \begin{equation}
-            k(x_i, \cdot): x' \mapsto k(x_i, x')
-        \end{equation}
-        in the RKHS.  
-        These kernel sections $k(x_i, \cdot)$ thus play a role analogous to partially contracted
-        tensors: each retains one free variable and collectively they span the functional space.
-\end{note}
+
 \begin{example}
   Consider $f\in \mathcal H$, where $\mathcal H$ is a Hilbert sapce, $f(x)=w^\top x,\,x,w\in\mathbb R^d$, then $k(z,x)=z^\top x$ is the reproducing kernel of $\mathcal H=\mathrm{span}\langle k(x,\cdot),\, x\in\mathbb R^d\rangle$ under inner product $\langle k(w,\cdot),k(\cdot,x)\rangle_\mathcal H:=k(w,x)$.  
 \end{example}
@@ -244,10 +262,7 @@ Briefly, an RKHS is a space in which the value of a function at any point can be
     \end{equation}
 \end{proof}
 \vspace{1em}
-We can demonstrated that the inner product of RKHS must have the term of:
-\begin{equation}
-    \langle k(z,\cdot),k(\cdot,x)\rangle=k(z,x)
-\end{equation}
+We can demonstrated that:
 \begin{proposition}
     The inner product of RKHS must have the term of:
 \begin{equation}
@@ -263,7 +278,7 @@ We can demonstrated that the inner product of RKHS must have the term of:
         \langle k(z,\cdot),k(\cdot,x)\rangle=k(z,x)
     \end{equation}
 \end{proof}
-Now we came to the core of this chapter.
+
 
 In a Reproducing Kernel Hilbert Space (RKHS) $\mathcal{H}$,  
 the norm of a function $f \in \mathcal{H}$ is induced by the inner product:
@@ -302,6 +317,7 @@ Using the reproducing property of the kernel, we have
     = w^\top w.
 \end{equation}
 
+Now we came to the core of this chapter.
 \begin{theorem}[Representer Theorem]
     Let $\mathcal{H}$ be a Reproducing Kernel Hilbert Space (RKHS) over a set $\mathcal{X}$ with reproducing kernel $k(\cdot, \cdot)$.  
     Consider the regularized empirical risk minimization problem of the form:
