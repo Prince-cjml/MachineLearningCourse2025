@@ -1194,7 +1194,7 @@
     before skip=10pt, after skip=10pt,
     fonttitle=\bfseries\color{main},
     title={\textcolor{main!80!black}{%
-      \raisebox{1pt}{\scriptsize\color{red!90}\HandPencilLeft}\quad
+      \raisebox{1pt}{\scriptsize\color{main!80!black}\HandPencilLeft}\quad
       \exercisename~\theexer%
       \ifx\relax#1\relax\else\quad--\quad #1\fi
     }},
@@ -1319,13 +1319,13 @@
 }
 
 
-\newenvironment{introduction}[1][\introductionname]{
+\newenvironment{introduction}[1][\textcolor{structurecolor}{.}\;\introductionname\;\textcolor{structurecolor}{.}]{
   \begin{tcolorbox}[introductionsty,title={#1}]
     \begin{multicols}{2}
       \begin{itemize}[label=\textcolor{structurecolor}{\upshape\scriptsize\SquareShadowBottomRight}]}{
       \end{itemize}
     \end{multicols}
-  \end{tcolorbox}}
+  \end{tcolorbox}\vspace{1em}}
 
 \RequirePackage{adforn}
 
