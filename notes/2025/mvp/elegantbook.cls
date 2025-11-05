@@ -1231,12 +1231,12 @@
   \newenvironment{note}{
     \begin{tcolorbox}[enhanced, breakable,
       colback=second!2, colframe=second!13,
-      boxrule=1pt, arc=2mm,
+      boxrule=1pt, arc=2mm,parbox=false,
       left=10pt, right=10pt, top=6pt, bottom=6pt,
       before skip=10pt, after skip=10pt,
       title={\textcolor{second}{{\fontsize{7.5pt}{9pt}\selectfont\textdbend}\; \raisebox{2.5pt}{\notename}}},
       fonttitle=\bfseries\color{second},
-    ]
+    ]\setlength{\parindent}{0em}
     \citshape
   }{
     % \hfill{\color{second}$\Box$}
@@ -1251,7 +1251,7 @@
       before skip=10pt, after skip=10pt,
       title={\textcolor{second}{\rule{0pt}{10pt}\raisebox{0pt}{\proofname}}},
       fonttitle=\bfseries\color{second},
-    ]
+    ]\setlength{\parskip}{0.5em}
     \citshape
   }{
     \hfill{\color{second}$\blacksquare$}
