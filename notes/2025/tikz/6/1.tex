@@ -1,0 +1,25 @@
+\documentclass[tikz]{standalone}
+\usepackage{amsmath}
+\begin{document}
+\begin{tikzpicture}[>=stealth,scale=1.2]
+
+% axes
+\draw[->] (-0.2,0) -- (4.5,0) node[right] {$x$};
+\draw[->] (0,-0.2) -- (0,3.5) node[above] {$y$};
+
+% 直线  y = 0.75 x
+\draw[thick] (0,0) -- (4,3);
+
+% 倾斜的正弦虚线：y = 0.75 x + 0.4 sin(4x)
+\draw[dashed,thick,domain=0:4,smooth,variable=\x]
+  plot ({\x},{0.75*\x + 0.4*sin(4*\x r)});
+
+% 交点：sin(4x)=0 → x = k*pi/4
+\foreach \k in {0,...,4}{
+  \pgfmathsetmacro{\xx}{\k*pi/4}
+  \pgfmathsetmacro{\yy}{0.75*\xx}
+  \fill (\xx,\yy) circle (1.5pt);
+}
+
+\end{tikzpicture}
+\end{document}
