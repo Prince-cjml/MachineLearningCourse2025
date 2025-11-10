@@ -8,8 +8,7 @@
 \item Ridge Regression ($L_2$ regularization)
 \item Lasso Regression ($L_1$ regularization)
 \end{introduction}
-\section{Basic Knowledge}
-\subsection{Linear Regression}
+\section{Basic Knowledge of Linear Regression}
 
 {Settings.}
 \begin{itemize}
@@ -29,7 +28,7 @@
   \end{definition}
 \end{itemize}
 
-\textbf{Quiz.} How to determine whether a parameter is learnable? How to determine $w$ and $b$?
+\noindent\textbf{Quiz.} How to determine whether a parameter is learnable? How to determine $w$ and $b$?
 
 
 \noindent Ans: \textbf{ERM} (Empirical Risk Minimization)
@@ -37,7 +36,6 @@
 \begin{itemize}
   \item Loss function. Squared Loss (SE) is commonly used during optimization. The training objective can be written as:
     \begin{equation}
-        \argmin_{w,b}{\color{blue}{\frac{1}{n}}}\sum_{i\in[n]}\left(y_i-(w^\top x_i+b)\right)^2
         \argmin_{w,b}{\color{blue}{\frac{1}{n}}}\sum_{i\in[n]}\left(y_i-(w^\top x_i+b)\right)^2
       \end{equation}
   
