@@ -872,27 +872,27 @@ Mercer’s Theorem provides the precise answer to this problem.
 \begin{theorem}[Mercer’s Theorem (Finite case)]
     A symmetric function $K(x, x')$ is a valid kernel if and only if, for any finite set $\{x_1, \dots, x_n\} \subset \mathcal{X}$, the Gram matrix 
     \begin{equation}
-        \mathbf{K}_{ij} = K(x_i, x_j)
+        K_{ij} = K(x_i, x_j)
     \end{equation}
     is positive semidefinite, i.e.
     \begin{equation}
-        \forall c \in \mathbb{R}^n, \quad c^\top \mathbf{K} c \ge 0.
+        \forall c \in \mathbb{R}^n, \quad c^\top K c \ge 0.
     \end{equation}
 \end{theorem}
     \begin{proof}
         In the finite-dimensional case.Let $\{x_1, \dots, x_n\} \subset \mathcal{X}$ be any finite subset, and 
-        define the Gram matrix $\mathbf{K} \in \mathbb{R}^{n \times n}$ by
+        define the Gram matrix $K \in \mathbb{R}^{n \times n}$ by
         \begin{equation}
-            \mathbf{K}_{ij} = K(x_i, x_j), \qquad i,j = 1,\dots,n.
+            K_{ij} = K(x_i, x_j), \qquad i,j = 1,\dots,n.
         \end{equation}
-        Since $K$ is symmetric, we have $\mathbf{K} = \mathbf{K}^\top$.
+        Since $K$ is symmetric, we have $K = K^\top$.
         
         By the spectral theorem for real symmetric matrices, 
         there exists an orthonormal basis of eigenvectors 
         $\{v_1, \dots, v_n\}$ and corresponding real eigenvalues 
         $\lambda_1, \dots, \lambda_n$ such that
         \begin{equation}
-            \mathbf{K} = V \Lambda V^\top,
+            K = V \Lambda V^\top,
         \end{equation}
         where $V = [v_1,\dots,v_n]$ is orthogonal and 
         $\Lambda = \operatorname{diag}(\lambda_1,\dots,\lambda_n)$.
@@ -900,7 +900,7 @@ Mercer’s Theorem provides the precise answer to this problem.
         The kernel $K$ being positive semidefinite implies that
         for all $c \in \mathbb{R}^n$,
         \begin{equation}
-            c^\top \mathbf{K} c 
+            c^\top K c 
         = \sum_{i,j} c_i K(x_i, x_j) c_j \ge 0,
         \end{equation}
         which in turn implies $\lambda_i \ge 0$ for all $i$.
@@ -913,7 +913,7 @@ Mercer’s Theorem provides the precise answer to this problem.
         Then for any $x_p, x_q \in \{x_1, \dots, x_n\}$,
         \begin{align}
         K(x_p, x_q)
-        &= \mathbf{K}_{pq}
+        &= K_{pq}
          = \sum_{i=1}^n \lambda_i v_i(p) v_i(q)
          = \sum_{i=1}^n \phi_i(x_p)\, \phi_i(x_q).
         \end{align}
