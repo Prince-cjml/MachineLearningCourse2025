@@ -9,9 +9,9 @@
 \item Maximum a posteriori
 \end{introduction}
 \section{Classification}
-\begin{example}
-  \textbf{Binary Classification Problem}
-\end{example}
+
+  \subsection{Binary Classification Problem}
+
 Settings.
 \begin{itemize}
   \item Dataset: $D=\{(x_i,y_i)\}_{i=1}^n$, where $x_i\in\mathbb{R}^d$ and $y_i\in\{0,1\}$.  
@@ -194,9 +194,9 @@ Although logistic regression may suffer from divergence of parameters under sepa
 \end{remark}
 \vspace{1em}
 
-\begin{example}
-  \textbf{Multi-Class Classificaiton (Softmax Regression)}
-\end{example}
+
+  \subsection{Multi-Class Classificaiton (Softmax Regression)}
+
 We can combine $k$ sub-classifiers to solve a $k$-class classification task. 
 Specifically, we apply a sigmoid-like transformation to each sub-linear model 
 $f_k(x) = w_k^\top x + b_k$, and obtain the probability of class $k$ using a normalized expression:
@@ -249,9 +249,9 @@ which leads to the following optimization problem:
   via the reparameterization $w = w_1 - w_2$ and $b = b_1 - b_2$.
 \end{remark}
 \section{Rethink of Linear Regression}
-\begin{example}
-  \textbf{MLE Explanation for Linear Regression}
-\end{example}
+
+  \subsection{MLE Explanation for Linear Regression}
+
 \begin{definition}[Gaussian/Normal Distribution]
     \begin{equation}
         x\sim\mathcal N(\mu,\sigma^2)\quad\Leftrightarrow\quad P(x)=\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
@@ -289,8 +289,8 @@ The log-likelihood takes the form:
 \end{align}
 where the equivalence follows by dropping constants and positive scalings. 
 Equation~\eqref{2.24} recovers ERM with the squared-loss objective.
-\begin{example}\textbf{Maximum a Posteriori (MAP)}
-\end{example}
+\subsection{Maximum a Posteriori (MAP)}
+
   In the MLE perspective, $w$ and $b$ are treated as unknown fixed constants. 
   In the Bayesian framework, however, even $w,b$ are considered as random variables (R.V.). 
   A  ``fixed constant'' can be seen as a random variable with an extremely sharp distribution (near $\delta$-distribution).

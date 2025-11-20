@@ -1,0 +1,487 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+
+\chapter{Representer Theorem}
+\begin{introduction}
+    \item Representer Theorem
+    \item Dual form of Linear Regression
+\end{introduction}
+\section{Revisit the Preliminaries}
+We first provide a brief overview of the previous chapters on Support Vector Machines (SVM).  
+The introduction of slack variables $\xi_i \ge 0,\ \forall i \in [n]$ allows the model to tolerate outliers or samples that do not strictly follow the shared distribution.  
+However, it is important to properly scale the penalty on the slack variables, since inappropriate choices of this scaling factor $C$ may severely affect the model’s generalization ability.
+
+The primal optimization problem of the soft-margin SVM can be written as:
+\begin{gather*}
+    \argmin_{w,b,\xi}\ \frac{1}{2}\|w\|^2 + C\sum_{i=1}^{n}\xi_i \\
+    \text{s.t.}\quad y_i(w^\top x_i + b) \ge 1 - \xi_i,\quad \xi_i \ge 0,\quad \forall i \in [n].
+\end{gather*}
+
+We can further express the decision function of the SVM as:
+\begin{equation}
+    f(x) = w^\top \varphi(x),
+\end{equation}
+where $\varphi(x)$ denotes a feature mapping that transforms the input $x$ into a (possibly higher-dimensional) feature space.  
+
+The objective function can then be rewritten as:
+\begin{equation}
+    \argmin_w \sum_{i \in [n]} \mathrm{Hinge}\bigl(f(x_i)\bigr) + \frac{\lambda}{2}\|w\|^2.
+\end{equation}
+
+\begin{remark}
+    There is a minor difference between the above expression and the original SVM formulation:  
+    the bias term $b$ can be absorbed into $w$ by augmenting the input vector with an additional dimension (e.g., appending $x_0 = 1$).  
+    % Further discussion could be held here.%
+\end{remark}
+
+By rewriting the $\mathrm{Hinge}\bigl(f(x_i)\bigr)$ term in terms of the slack variables $\xi_i$,  
+we can derive the dual formulation of the soft-margin SVM:
+\begin{equation}
+    \argmax_{\alpha \ge 0,\, \beta \ge 0}\;
+    \argmin_{w,b}
+    \left[
+        \sum_{i \in [n]} \xi_i
+        + \frac{\lambda}{2} w^\top w
+        + \sum_{i \in [n]} \alpha_i\bigl(1 - y_i w^\top \varphi(x_i) - \xi_i\bigr)
+        - \sum_{i \in [n]} \beta_i \xi_i
+    \right].
+    \label{5.1.3}
+\end{equation}
+Here, $\alpha_i,\beta_i$ are both Lagrange multiplier. The gradient of the uppon targer brings:
+\begin{gather}\left.
+    \begin{matrix}
+        \partial_w L=0\\
+        \partial_{\xi_i} L=0
+    \end{matrix}\right\}\quad \Rightarrow\quad\begin{cases}
+        \displaystyle w=\frac{1}{\lambda}\sum_{i\in [n]}\alpha_i y_i\varphi(x_i)\\
+        \alpha_i+\beta_i=1
+    \end{cases}
+\end{gather} 
+Bring back to \eqref{5.1.3}:
+\begin{align}
+    \mathrm{Dual}&:\frac{1}{2}\lambda\left(\frac{1}{\lambda}\right)^2\sum_{i,j\in[n]}\alpha_i\alpha_jy_iy_j\varphi^\top(x_i)\varphi(x_j)-\sum_{i\in[n]}\alpha_iy_i\varphi^\top(x_i)\frac{1}{\lambda}\sum_{j\in[n]}\alpha_jy_j\varphi(x_j)+\sum_{i\in[n]}\alpha_i
+\end{align}
+By simplification and kernel tricks:
+\begin{align}
+    \mathrm{Dual}&:\argmax_{\alpha}-\frac{1}{2\lambda}\sum_{i,j\in[n]}\alpha_i\alpha_jy_iy_jk(x_i,x_j)+\sum_{i\in[n]}\alpha_i\quad s.t.\; 0\le\alpha_i\le 1
+\end{align}
+It can be observed that the only difference between the dual problems of the soft-margin and hard-margin SVMs lies in the constraint on $\alpha_i$.  
+In the soft-margin formulation, each $\alpha_i$ is required to satisfy $\alpha_i \le 1$  
+(which is equivalent to introducing $\beta_i \ge 0$ and enforcing $\alpha_i + \beta_i = 1$).  
+This constraint limits the influence of any single support vector, preventing the model from overemphasizing outliers or noisy samples.
+
+Ultimately, the prediction function $f(x)$ can be reformulated as a linear combination of kernel evaluations between the input point $x$ and the training data points $x_i$:
+\begin{equation}
+    f(x) = \sum_{i=1}^{n} \alpha_i\, k(x_i, x),
+\end{equation}
+where $k(x_i, x) = \varphi(x_i)^\top \varphi(x)$ denotes the kernel function.
+\vspace{1em}
+
+In the previous part, we introduced the notion of the \emph{feature space}.  
+We now provide a new example, the \textbf{Ridge Regression}, to demonstrate that this concept is widely used in the field of machine learning.
+
+The objective function of Ridge Regression is:
+\begin{equation}
+    \argmin_{w} \frac{1}{2}\sum_{i \in [n]} \bigl(y_i - w^\top \varphi(x_i)\bigr)^2 + \frac{1}{2}\lambda\, w^\top w =: L(w)
+\end{equation}
+
+Taking the derivative with respect to $w$ gives:
+\begin{equation}
+    \frac{\partial L}{\partial w}
+    = -\sum_{i \in [n]} \bigl(y_i - w^\top \varphi(x_i)\bigr)\varphi(x_i) + \lambda w = 0
+\end{equation}
+
+Rearranging terms yields:
+\begin{equation}
+    w = \frac{1}{\lambda}\sum_{i \in [n]} \bigl(y_i - w^\top \varphi(x_i)\bigr)\varphi(x_i)
+\end{equation}
+
+We can rewrite this as:
+\begin{equation}
+    w = \sum_{i \in [n]} \alpha_i\, \varphi(x_i)
+\end{equation}
+where $\alpha_i = \frac{1}{\lambda}\bigl(y_i - w^\top \varphi(x_i)\bigr)$.
+
+Substituting this representation into the prediction function gives:
+\begin{equation}
+    f(x) = w^\top \varphi(x) = \sum_{i \in [n]} \alpha_i\, k(x_i, x)
+\end{equation}
+where $k(x_i, x) = \varphi(x_i)^\top \varphi(x)$ is the kernel function.
+
+The shared form also occurs in the logistic regression problem.
+
+The objective function of regularized logistic regression is:
+\begin{equation}
+    \min_{w} \sum_{i \in [n]} \log\bigl(1 + e^{-y_i w^\top \varphi(x_i)}\bigr)
+    + \frac{1}{2}\lambda\, w^\top w
+\end{equation}
+
+Taking the derivative with respect to $w$ gives:
+\begin{equation}
+    \frac{\partial L}{\partial w}
+    = \sum_{i \in [n]} \frac{e^{-y_i w^\top \varphi(x_i)}}{1 + e^{-y_i w^\top \varphi(x_i)}}(-y_i)\varphi(x_i)
+    + \lambda w = 0
+\end{equation}
+
+Rearranging the terms, we can express $w$ as:
+\begin{equation}
+    w = \sum_{i \in [n]} \alpha_i\, \varphi(x_i)
+\end{equation}
+where
+\begin{equation}
+    \alpha_i = \frac{1}{\lambda}\frac{y_i e^{-y_i w^\top \varphi(x_i)}}{1 + e^{-y_i w^\top \varphi(x_i)}}.
+\end{equation}
+
+Substituting this representation into the prediction function gives:
+\begin{equation}
+    f(x) = w^\top \varphi(x) = \sum_{i \in [n]} \alpha_i\, k(x_i, x),
+\end{equation}
+
+The above observation suggests a deeper connection between \emph{representation} and the \emph{kernel trick}.  
+It shows that all the regression models we have discussed so far can be interpreted as  
+special cases of the same underlying idea.
+\section{Representer Theorem}
+We have already defined the concept of a \emph{Hilbert space} in Definition~\ref{def:3.4}.  
+Building upon that foundation, we now introduce the notion of a \textbf{Reproducing Kernel Hilbert Space (RKHS)},  
+which extends the idea of inner product spaces to functional spaces, allowing the kernel trick to be formally grounded in Hilbert space theory.
+\begin{definition}[Reproducing Kernel Hilbert Space (RKHS)]
+    Let $\mathcal{H}$ be a Hilbert space of functions $f:\mathcal{X}\to\mathbb{R}$ defined on a nonempty set $\mathcal{X}$.  
+    If there exists a function $k:\mathcal{X}\times\mathcal{X}\to\mathbb{R}$ such that:
+    
+    \begin{enumerate}
+        \item For every $x\in\mathcal{X}$, the function $k(\cdot, x)\in\mathcal{H}$.
+        \item For every $f\in\mathcal{H}$ and every $x\in\mathcal{X}$, the \emph{reproducing property} holds:
+        \begin{equation}
+            f(x) = \langle f,\, k(\cdot, x) \rangle_{\mathcal{H}},
+        \end{equation}
+    \end{enumerate}
+    then $\mathcal{H}$ is called a \textbf{Reproducing Kernel Hilbert Space}, and $k$ is called its \textbf{reproducing kernel}.
+    \end{definition}
+    \begin{remark}
+        In fact, the above definition is quite intuitive once we recall that a Hilbert space differs from a general vector space primarily in its \textbf{completeness} under an \textbf{inner product}. 
+        In other words, a Hilbert space is a complete inner product space, which extends the familiar geometric structure of finite-dimensional Euclidean spaces to infinite dimensions.
+    \end{remark}
+    \begin{note}
+        The completeness of a Reproducing Kernel Hilbert Space (RKHS) refers to the property that every Cauchy sequence in the space converges to a limit that still lies within the space.  
+        In geometric terms, this means the RKHS is ``closed under limits'' with respect to its inner-product-induced norm.
+    
+        Moreover, by a fundamental result in Hilbert space theory, every separable Hilbert space admits a \emph{complete orthonormal basis}.  
+        Hence, an RKHS possesses (possibly infinite-dimensional) orthonormal basis functions 
+        $\{e_i\}_{i=1}^{\infty}$ such that any function $f \in \mathcal{H}$ can be expressed as
+        \begin{equation}
+            f = \sum_{i=1}^{\infty} \langle f, e_i \rangle_{\mathcal{H}}\, e_i,
+        \end{equation}
+        where the series converges in the Hilbert norm.  
+        In the context of kernel methods, Mercer’s theorem ensures that the kernel function
+itself can be decomposed as
+\begin{equation}
+    k(x, x') = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\phi_i(x'),
+\end{equation}
+where $\{\sqrt{\lambda_i}\,\phi_i\}$ forms a complete orthonormal basis in the RKHS.
+\begin{theorem}[Mercer’s Theorem]
+    Let $k(x, x')$ be a continuous, symmetric, and positive semi-definite kernel function  
+    defined on a compact domain $\mathcal{X} \subset \mathbb{R}^d$.  
+    Then there exists an orthonormal basis of eigenfunctions  
+    $\{\phi_i\}_{i=1}^{\infty}$ in $L^2(\mathcal{X})$ and a sequence of non-negative eigenvalues  
+    $\{\lambda_i\}_{i=1}^{\infty}$ such that
+    \begin{equation}
+        k(x, x') = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\, \phi_i(x'),
+    \end{equation}
+    where the series converges absolutely and uniformly.
+\end{theorem}
+This result shows that any Mercer kernel defines a compact, self-adjoint, and positive 
+    operator $\mathcal{T}_k$ on $L^2(\mathcal{X})$:
+    \begin{equation}
+        (\mathcal{T}_k f)(x) = \int_{\mathcal{X}} k(x, x')\, f(x')\, dx'.
+    \end{equation}
+    The eigenfunctions $\{\phi_i\}$ and eigenvalues $\{\lambda_i\}$ then form the spectral 
+    decomposition of $\mathcal{T}_k$.
+
+
+    \begin{proposition}
+        The RKHS $\mathcal{H}_k$ associated with $k$ can be realized as the completion of the span of the kernel sections
+        \begin{equation}
+            \mathcal{H}_0 = \mathrm{span}\langle\,k(x, \cdot)\mid x \in \mathcal{X}\,\rangle.
+        \end{equation}
+        Each $k(x, \cdot)$ can itself be expanded in the eigenbasis $\{\color{red}\phi_i\color{black}\}$ as
+        \begin{equation}
+            k(x, \cdot) = \sum_{i=1}^{\infty} \lambda_i\, \phi_i(x)\, \color{red}\phi_i\color{black}(\cdot).
+        \end{equation}
+    \end{proposition}
+
+    Consequently, every function in the RKHS can be approximated arbitrarily well by 
+    finite linear combinations of kernel sections $k(x_i, \cdot)$, since these functions span a 
+    dense subspace of $\mathcal{H}_k$.  
+    That is,
+    \begin{equation}
+        f = \sum_{i=1}^{\infty} \alpha_i\, k(x_i, \cdot),
+    \end{equation}
+    where the series converges in the Hilbert norm.
+    \end{note}
+    \begin{note}
+        I have not listed the properties of the inner product here, as they should be familiar to anyone with basic mathematical knowledge, although Prof. Zhang presented them in detail during class for the sake of completeness.
+    \end{note}
+\vspace{1em}
+Briefly, an RKHS is a space in which the value of a function at any point can be expressed as an inner product between the function itself and the corresponding kernel function.
+\begin{note}
+    This property of the kernel function bears a striking resemblance to the idea of
+    \emph{tensor contraction}.  
+    In tensor analysis, a multivariate tensor can be transformed into a new object by
+    contracting over one or more indices, effectively ``fixing'' certain variables while
+    leaving others free.  
+    Likewise, in the context of RKHS, a kernel $k(x, x')$ can be viewed as a bivariate
+    function that, once one argument (say $x_i$) is fixed, induces a new function
+    \begin{equation}
+        k(x_i, \cdot): x' \mapsto k(x_i, x')
+    \end{equation}
+    in the RKHS.  
+    These kernel sections $k(x_i, \cdot)$ thus play a role analogous to partially contracted
+    tensors: each retains one free variable and collectively they span the functional space.
+\end{note}
+
+\begin{example}
+  Consider $f\in \mathcal H$, where $\mathcal H$ is a Hilbert sapce, $f(x)=w^\top x,\,x,w\in\mathbb R^d$, then $k(z,x)=z^\top x$ is the reproducing kernel of $\mathcal H=\mathrm{span}\langle k(x,\cdot),\, x\in\mathbb R^d\rangle$ under inner product $\langle k(w,\cdot),k(\cdot,x)\rangle_\mathcal H:=k(w,x)$.  
+\end{example}
+\begin{proof}
+    \begin{equation}
+        \langle k(w,\cdot),k(\cdot,x)\rangle_\mathcal H=k(w,x)=w^\top x=f(x)
+    \end{equation}
+\end{proof}
+
+\begin{example}
+    General form. $f(x)=w^\top \varphi(x)$ and $w\in\mathrm{span}\langle\varphi(x):x\in\mathbb R^d\rangle$, $\varphi(x)$ can be expand under polynomial basis. Prove $k(z,x):=\varphi^\top(z)\varphi(x)$ is a reproduce kernel under inner product $\langle k(w,\cdot),k(\cdot,x)\rangle_\mathcal H:=k(w,x)$.
+\end{example}
+\begin{proof}
+    Assume $\varphi^{-1}$ exist:
+    \begin{equation}
+        \langle k(\varphi^{-1}(w),\cdot),k(\cdot,x)\rangle_\mathcal H=w^\top\varphi(x)=f(x)
+    \end{equation}
+    Otherwise, expand $f$ with kernel basis:
+    \begin{equation}
+        \sum_{i=1}^\infty\langle \alpha_ik(x_i,\cdot),k(\cdot,x)\rangle_\mathcal H=\underbrace{\sum_{i=1}^\infty\alpha_i\varphi^\top(x_i)}_{:=\,w^\top}\varphi(x)=w^\top \varphi(x)=f(x)
+    \end{equation}
+\end{proof}
+\vspace{1em}
+We can demonstrated that:
+\begin{proposition}
+    The inner product of RKHS must have the term of:
+\begin{equation}
+    \langle k(z,\cdot),k(\cdot,x)\rangle=k(z,x)
+\end{equation}
+\end{proposition}
+\begin{proof}
+    \begin{equation}
+        \sum_{i=1}^\infty\langle \alpha_ik(x_i,\cdot),k(\cdot,x)\rangle_\mathcal H\underbrace{=}_{\rm by\ RKHS's\ properties}f(x)=\underbrace{\sum_{i=1}^\infty \alpha_ik(x_i,x)}_{\text{by $f(x)$'s def}}
+    \end{equation}
+    Seperate the uppon formula by $\alpha_i$:
+    \begin{equation}
+        \langle k(z,\cdot),k(\cdot,x)\rangle=k(z,x)
+    \end{equation}
+\end{proof}
+
+
+In a Reproducing Kernel Hilbert Space (RKHS) $\mathcal{H}$,  
+the norm of a function $f \in \mathcal{H}$ is induced by the inner product:
+\begin{equation}
+    \|f\|_{\mathcal{H}}^2 = \langle f, f \rangle_{\mathcal{H}}.
+\end{equation}
+
+For a linear function of the form
+\begin{equation}
+    f(x) = w^\top x,
+\end{equation}
+we have
+\begin{equation}
+    \langle f, f \rangle_{\mathcal{H}}
+    = \langle k(w, \cdot),\, k(w, \cdot) \rangle_{\mathcal{H}}
+    = k(w, w)
+    = w^\top w.
+\end{equation}
+Thus, the RKHS norm of $f$ coincides with the Euclidean norm of its weight vector $w$.
+
+For a feature-mapped function
+\begin{equation}
+    f(x) = w^\top \varphi(x),
+\end{equation}
+its inner product in the RKHS is given by
+\begin{equation}
+    \langle f, f \rangle_{\mathcal{H}}
+    = \langle k(\varphi^{-1}(w), \cdot),\, k(\varphi^{-1}(w), \cdot) \rangle_{\mathcal{H}}
+    = k(\varphi^{-1}(w), \varphi^{-1}(w)).
+\end{equation}
+Using the reproducing property of the kernel, we have
+\begin{equation}
+    k(\varphi^{-1}(w), \varphi^{-1}(w))
+    = \langle \varphi(\varphi^{-1}(w)),\, \varphi(\varphi^{-1}(w)) \rangle_{\mathcal{H}}
+    = \varphi(\varphi^{-1}(w))^\top \varphi(\varphi^{-1}(w))
+    = w^\top w.
+\end{equation}
+
+Now we came to the core of this chapter.
+\begin{theorem}[Representer Theorem]
+    Let $\mathcal{H}$ be a Reproducing Kernel Hilbert Space (RKHS) over a set $\mathcal{X}$ with reproducing kernel $k(\cdot, \cdot)$.  
+    Consider the regularized empirical risk minimization problem of the form:
+    \begin{equation}
+        \inf_{f \in \mathcal{H}} \; J(f)
+        := \sum_{i\in[n]}L(f(x_i,y_i))+
+        R( \|f\|_\mathcal H),
+        \label{eq:representer_obj}
+    \end{equation}
+    where $L:\mathbb{R}^2 \to \mathbb{R}$ is an arbitrary loss function depending only on the function values at the sample points $\{x_i\}_{i=1}^n$, and $R$ is a regularization function that $[0,\infty)\to \mathbb R$.
+
+    Then the minimizer $f^\star \in \mathcal{H}$ exists and admits the finite representation
+    \begin{equation}
+        f^\star = \sum_{i=1}^n \alpha_i\, k(x_i, \cdot),
+    \end{equation}
+    for some coefficients $\alpha_1, \dots, \alpha_n \in \mathbb{R}$.
+\end{theorem}
+\begin{proof}
+    Any $f \in \mathcal{H}$ can be decomposed into two orthogonal components:
+    \begin{equation}
+        f = f_\parallel + f_\perp,
+    \end{equation}
+    where $f_\parallel$ lies in the subspace $\mathcal{H}_0 := \mathrm{span}\{k(x_i, \cdot)\}_{i=1}^n$
+    and $f_\perp$ is orthogonal to $\mathcal{H}_0$.
+
+    We have
+    \begin{equation}
+        f_\perp(x_i) = \langle f_\perp,\, k(\cdot, x_i) \rangle_{\mathcal{H}} = 0,
+        \quad \forall i.
+    \end{equation}
+    Hence the loss term $L(f(x_1), \dots, f(x_n))$ depends only on $f_\parallel$.
+    Moreover, by the Pythagorean theorem,
+    \begin{equation}
+        R(\|f\|_{\mathcal{H}})
+        = R\left(\sqrt{\|\sum_{i\in[n]}\alpha_i k(x_i,\cdot)\|_{\mathcal{H}}+\|f_{\bot}\|_{\mathcal{H}}}\right)\ge R\left(|\sum_{i\in[n]}\alpha_i k(x_i,\cdot)|\right)
+    \end{equation}
+    Replacing $f$ with $f_\parallel$ thus never increases the objective in
+    (\ref{eq:representer_obj}), implying that an optimal solution must lie in $\mathcal{H}_0$.
+
+    Therefore, the minimizer $f^\star$ can be expressed as a finite kernel expansion:
+    \begin{equation}
+        f^\star = \sum_{i=1}^n \alpha_i\, k(x_i, \cdot).
+    \end{equation}
+\end{proof}
+    The Representer Theorem carries a profound geometric interpretation.  
+    Although the feature mapping 
+    \begin{equation}
+        \varphi:\mathcal{X} \to \mathcal{H}
+    \end{equation}
+    may embed the data into a potentially infinite-dimensional manifold within the RKHS,  
+    the optimization of $f$ does not require direct manipulation in this high-dimensional space.
+
+    Specifically, the theorem states that the optimal function takes the form
+    \begin{equation}
+        f^\star = \sum_{i=1}^{n} \alpha_i\, k(x_i, \cdot),
+    \end{equation}
+    which lies entirely within the finite-dimensional submanifold
+    \begin{equation}
+        \mathcal{M}_n = \mathrm{span}\langle k(x_1,\cdot), k(x_2,\cdot), \dots, k(x_n,\cdot)\rangle
+        \subseteq \mathcal{H}.
+    \end{equation}
+
+    Thus, even though $\mathcal{H}$ may be infinite-dimensional,  
+    the optimization problem effectively reduces to solving for the coefficients
+    \begin{equation}
+        \alpha_1,\, \alpha_2,\, \dots,\, \alpha_n,
+    \end{equation}
+    within this $n$-dimensional subspace.
+    \begin{figure}[H]
+        \centering
+        \includegraphics{../../tikz/5/1.pdf}
+    \end{figure}
+    Geometrically, the kernel trick enables us to perform optimization on a 
+    low-dimensional submanifold embedded in a high-dimensional feature manifold.  
+    Therefore, instead of optimizing a weight vector $w$ in the full RKHS,  
+    we only need to search for the optimal combination of kernel coefficients 
+    $\{\alpha_i\}$ within the subspace spanned by the training data.
+
+    The above discussion reveals that a wide range of learning algorithms admit solutions 
+    expressed as weighted sums of kernel functions evaluated on finite training samples.  
+    This formulation transforms the prediction task into a problem of computing 
+    similarities between data points, rather than directly optimizing over high-dimensional parameters.  
+    
+    In this sense, kernel methods serve as a bridge between \emph{parametric} and 
+    \emph{non-parametric} models (such as $k$-Nearest Neighbors),  
+    combining the expressive flexibility of similarity-based approaches with the 
+    theoretical rigor of parameterized optimization frameworks.
+\section{Dual Form of Linear Regression}
+Consider the regularized least squares problem:
+\begin{equation}
+    \min_{w} \; J(w)
+    = \frac{1}{2} \sum_{i \in [n]} \bigl(y_i - w^\top \varphi(x_i)\bigr)^2
+    + \frac{1}{2}\lambda\, w^\top w,
+\end{equation}
+where $\varphi(x_i)$ is the feature mapping and $\lambda > 0$ is a regularization coefficient.
+Taking the derivative of $J(w)$ with respect to $w$ gives
+\begin{equation}
+    \frac{\partial J}{\partial w}
+    = \sum_{i \in [n]} \bigl(w^\top \varphi(x_i) - y_i\bigr)\varphi(x_i)
+    + \lambda w = 0.
+\end{equation}
+
+Rearranging terms, we can express $w$ as a linear combination of feature vectors:
+\begin{equation}
+    w = \sum_{i \in [n]} \alpha_i\, \varphi(x_i),
+\end{equation}
+where $\alpha_i \in \mathbb{R}$ are the dual coefficients.
+
+Let the feature matrix be
+\begin{equation}
+    \Phi =
+    \begin{pmatrix}
+        \varphi(x_1)^\top \\
+        \varphi(x_2)^\top \\
+        \vdots \\
+        \varphi(x_n)^\top
+    \end{pmatrix}
+    \in \mathbb{R}^{n \times d}.
+\end{equation}
+Then $w$ can be compactly written as
+\begin{equation}
+    w = \Phi^\top \alpha.
+\end{equation}
+
+Substituting into the objective function yields:
+\begin{equation}
+    J(w)
+    = \frac{1}{2} (\Phi w - y)^\top (\Phi w - y)
+    + \frac{1}{2}\lambda\, w^\top w.
+\end{equation}
+By substituting $w = \Phi^\top \alpha$, we obtain:
+\begin{equation}
+    J(\alpha)
+    = \frac{1}{2} (\Phi \Phi^\top \alpha - y)^\top (\Phi \Phi^\top \alpha - y)
+    + \frac{1}{2}\lambda\, \alpha^\top \Phi \Phi^\top \alpha.
+\end{equation}
+
+Defining the kernel matrix (\textbf{Gram Matrix}):
+\begin{equation}
+    K = \Phi \Phi^\top, \quad K_{ij} = \langle \varphi(x_i), \varphi(x_j) \rangle = k(x_i, x_j),
+\end{equation}
+the dual objective becomes:
+\begin{equation}
+    J(\alpha)
+    = \frac{1}{2} (K\alpha - y)^\top (K\alpha - y)
+    + \frac{1}{2}\lambda\, \alpha^\top K \alpha.
+\end{equation}
+By derivation:
+\begin{gather}
+    J(\alpha)=\frac{1}{2}\alpha^\top KK\alpha+\frac{1}{2}y^\top y-\alpha^\top Ky+\frac{\lambda}{2}\alpha^\top K\alpha\\
+    \frac{\partial J(\alpha)}{\partial\alpha}=KK\alpha-Ky+\lambda K\alpha=0
+\end{gather}
+If $K\succ 0$:
+\begin{equation}
+    (K + \lambda I)\alpha = y\quad \Rightarrow\quad \alpha=(K+\lambda I)^{-1} y
+\end{equation}
+
+By simplification, notice that $w=\Phi^\top\alpha$, the prediction function can be expressed as:
+\begin{equation}
+    f(x) = w^\top \varphi(x)
+    = \begin{pmatrix}
+        k(x_1, x)\\
+        \vdots\\
+        k(x_n, x)
+    \end{pmatrix}(K+\lambda I)^{-1} y .\label{equ:4.61}
+\end{equation}
+\end{document}

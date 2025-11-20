@@ -1,0 +1,599 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\chapter{Gaussian Process}
+\begin{introduction}
+    \item Gaussian Process Definition
+    \item Kernel and Covariance Structure
+    \item Joint–Conditional Gaussian Identities
+    \item Gaussian Process Regression
+    \item RBF Kernel and Limit Behaviors
+    \item Bayesian Linear Regression as GP
+\end{introduction}
+\section{Stochastic Process}
+\begin{definition}[Stochastic Process]
+    A \emph{stochastic process} is a collection of random variables
+    (possibly infinitely many) indexed by a set $\mathcal{I}$.
+\end{definition}
+
+The choice of index set $\mathcal{I}$ is flexible; common examples include
+the natural numbers $\mathbb{N}$ or the real line $\mathbb{R}$.  
+We may freely draw sample pairs $(x_i, y_i)$ with $y_i \sim p(x_i)$, and in the limit of infinitely many samples the joint distribution of these pairs becomes determined.  
+Conversely, we may also characterize a stochastic process directly by specifying the joint distributions of the random variables $\{y_i\}_{i\in\mathcal I}$ for all finite index subsets.
+
+\begin{definition}[Markov Random Process]
+    A \emph{Markov random process} $\{y_i\}_{i\in\mathbb{N}}$ is a stochastic process satisfying
+    \begin{equation}
+        p(y_{t+1}\mid y_1,\dots,y_t)
+        = p(y_{t+1}\mid y_t),
+        \qquad \forall\, t\in\mathbb{N}.
+    \end{equation}
+\end{definition}
+
+\begin{definition}[Bernoulli Random Process]
+    A \emph{Bernoulli random process} $\{y_i\}_{i\in\mathbb{N}}$ is a stochastic process satisfying
+    \begin{equation}
+        p(y_1,\dots,y_n)
+        = \prod_{i=1}^n p(y_i),
+    \end{equation}
+    meaning that the random variables are mutually independent, and each
+$
+        y_i \sim \mathcal{B}(1, p_i)
+$
+    follows a Bernoulli distribution.
+\end{definition}
+\begin{definition}[Multivariate Gaussian]
+    For $x\in\mathbb{R}^d$, we say that $x$ follows a \emph{multivariate Gaussian distribution} if
+    \begin{equation}
+        p(x)
+        = \frac{1}{(2\pi)^{d/2}}
+          \frac{1}{\det(\Sigma)^{1/2}}
+          \exp\!\left(
+              -\frac{1}{2}(x-\mu)^\top \Sigma^{-1} (x-\mu)
+          \right),
+    \end{equation}
+    where $\mu\in\mathbb{R}^d$ is the mean vector and $\Sigma\in\mathbb{R}^{d\times d}$ is a positive-definite symmetric covariance matrix.
+    We denote this distribution by
+    $
+        x \sim \mathcal{N}(\mu, \Sigma).
+$
+\end{definition}
+
+It is easy to verify that the multivariate Gaussian reduces to the standard one-dimensional
+Gaussian distribution when $d=1$.
+Moreover, when the covariance matrix $\Sigma$ is diagonal, the multivariate Gaussian
+factorizes into the product of $d$ independent one-dimensional Gaussian distributions.
+
+\begin{remark}
+    More detailed mathematical treatment can be found in
+    \href{https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf}{\emph{Pattern Recognition and Machine Learning}} (Bishop, Sec.~2.3).
+\end{remark}
+
+    
+    \begin{theorem}
+        Any affine (or linear) transformation of a Gaussian random variable
+        remains Gaussian.
+    \end{theorem}
+    
+    The above property can in fact be taken as an equivalent way to
+    \emph{define} the Gaussian distribution, due to the equivalence between the
+    standard density-based definition and this transformation property.
+    
+    \begin{note}
+        This property also extends to the case where the covariance matrix
+        $\Sigma$ is degenerate.
+    \end{note}
+    \begin{definition}[Gaussian Process]
+        A \emph{Gaussian Process} (GP) is a collection of random variables
+        $\{f(x)\}_{x\in\mathcal X}$ indexed by an input space $\mathcal X$,
+        such that every finite subcollection
+        \begin{equation}
+            \bigl(f(x_1), f(x_2), \dots, f(x_n)\bigr)
+        \end{equation}
+        is jointly multivariate Gaussian for all choices of $x_1,\dots,x_n\in\mathcal X$.
+        \end{definition}
+    A natural question arises:  
+    to specify a Gaussian process, do we need to provide a different set
+    of parameters for every collection of $n$ random variables?
+    If that were the case, the notion of a Gaussian process would lose
+    its meaning, since incorporating more sample points would require
+    specifying exponentially many parameters, which is an infeasible task when $n$ is large.
+    
+    Fortunately, Gaussian processes enjoy the desirable closure property
+    under linear transformations.  
+    This guarantees that adding new random variables does not affect the
+    parameters of existing ones, because the projection
+    \[
+        (y_1,\dots,y_{n+1}) \mapsto (y_1,\dots,y_n)
+    \]
+    is itself a linear (though degenerate) transformation.
+    
+    \begin{note}
+    \begin{equation}
+        \begin{pmatrix}
+            y_1\\[2pt]
+            \vdots\\[2pt]
+            y_n\\[2pt]
+            0
+        \end{pmatrix}
+        =
+        \mathrm{diag}(1,\dots,1,0)
+        \begin{pmatrix}
+            y_1\\[2pt]
+            \vdots\\[2pt]
+            y_n\\[2pt]
+            y_{n+1}
+        \end{pmatrix}.
+    \end{equation}
+    \end{note}
+%---------1----------
+More precisely, a Gaussian process is completely specified once we assign
+a mean value $\mu_i$ to every random variable $y_i$, and a covariance value
+$\Sigma_{ij}$ to every pair $(y_i, y_j)$.  
+These quantities must satisfy the usual symmetry and positive
+semi-definiteness conditions; under these consistency requirements,
+they uniquely determine a Gaussian process.
+
+We write a Gaussian process as
+\begin{equation}
+    f \sim \mathcal{GP}\!\left(m(\cdot),\, k(\cdot,\cdot)\right),
+\end{equation}
+where the mean function $m:\mathcal X\to\mathbb{R}$ is defined by
+\begin{equation}
+    m(x) = \mathbb{E}[f(x)]:=\int_{\mathcal X} f(x)\,\mathrm d\mu(x),
+\end{equation}
+and the covariance kernel $k:\mathcal X\times\mathcal X\to\mathbb{R}$ is given by
+\begin{equation}
+    k(x,x') 
+    = \mathrm{Cov}\!\left(f(x), f(x')\right)
+    = \mathbb{E}\!\left[(f(x)-m(x))(f(x')-m(x'))\right],
+\end{equation}
+which must be positive semi-definite. In short, once the mean function and covariance kernel are fixed, the entire
+Gaussian process is already written; nothing further needs to be said.
+\begin{remark}
+    In practice, we may assume that the kernel $k$ is strictly positive definite.
+    If the corresponding covariance matrix $\Sigma$ is only positive semi-definite,
+    we can add a small regularization term on the diagonal, for example
+    \begin{equation}
+        \Sigma_\varepsilon = \Sigma + \varepsilon I,\qquad \varepsilon > 0,
+    \end{equation}
+    which ensures $\Sigma_\varepsilon \succ 0$.
+    This is equivalent to adding a small independent Gaussian noise term to the process
+    and is commonly used to avoid numerical degeneracy.
+\end{remark}
+\begin{example}
+    In geostatistical terrain modeling, assume we observe discrete elevation
+samples
+\begin{equation}
+    \{(x_i,\, y_i)\}_{i=1}^n,\qquad x_i\in\mathcal X\subset\mathbb R^2,
+\end{equation}
+where each $y_i$ denotes the measured height at location $x_i$.
+
+To obtain a smooth terrain surface from these samples, we place a Gaussian
+process prior on the unknown height function $f:\mathcal X\to\mathbb R$:
+\begin{equation}
+    f \sim \mathcal{GP}\!\left(0,\; k_{\mathrm{RBF}}(\cdot,\cdot)\right).
+\end{equation}
+
+The radial basis function (RBF) kernel is given by
+\begin{equation}
+    k_{\mathrm{RBF}}(x,x')
+    = \sigma^{2}\exp\!\left(
+        -\frac{\|x-x'\|^{2}}{2\ell^{2}}
+      \right),
+\end{equation}
+which controls smoothness and spatial correlation of the terrain.
+
+Conditioning on the observed elevations $\{y_i\}$, the posterior mean
+\begin{equation}
+    m_f(x) = \mathbb E\!\left[f(x)\mid \{y_i\}_{i=1}^n\right]
+\end{equation}
+yields a smooth interpolating surface, where the height at each location
+is a kernel-weighted combination of nearby observations.
+\begin{center}
+    \includegraphics{../../tikz/7/1.pdf}
+\end{center}
+Thus, the RBF kernel spreads the influence of each sample point smoothly
+across the region, producing a continuous terrain map consistent with
+the measured elevations.
+\end{example}
+In many applications, the mean function is set to be identically zero,
+$m(x)\equiv 0$, which corresponds to placing an uninformative prior on $f$.
+%
+Under the assumption that the mean function is identically zero, $m(x)\equiv 0$, 
+and given a kernel $k(x_i,x_j)$, the vector of training labels satisfies
+\begin{equation}
+    y \sim \mathcal N(0, K),
+\end{equation}
+where $K$ is the Gram matrix defined previously, and the mean $0$ denotes the
+zero vector in $\mathbb R^n$ with the same dimension as $y$.
+
+Let $\{x_i\}_{i=1}^n$ be the training inputs and $\{y_i\}$ their corresponding
+observations.  
+The above Gaussian model describes the joint distribution induced by the
+Gaussian process prior on the training set.  
+For a new test point $(x_\star, y_\star)$, we can augment the training vector to
+obtain the joint prior
+\begin{equation}
+    \begin{pmatrix}
+        y_\star \\[2pt]
+        y
+    \end{pmatrix}
+    \sim
+    \mathcal N\!\left(
+        0,\;
+        \begin{pmatrix}
+            k(x_\star,x_\star) & k(x_\star,\cdot)^\top \\
+            k(x_\star,\cdot)   & K
+        \end{pmatrix}
+    \right),
+\end{equation}
+where
+\begin{equation}
+    k(x_\star,\cdot)
+    \;=\;
+    \begin{pmatrix}
+        k(x_\star,x_1)\\
+        \vdots\\
+        k(x_\star,x_n)
+    \end{pmatrix}.
+\end{equation}
+
+To make predictions, we require the conditional distribution $p(y_\star \mid y)$.
+Since the joint distribution is Gaussian and the marginal $p(y)$ is known, the
+conditional distribution can be obtained directly using the standard formula for
+conditioning a multivariate normal distribution.
+
+Jumping directly to the conclusion, let
+\begin{equation}
+    x=
+    \begin{pmatrix}
+        x_a\\[2pt]
+        x_b
+    \end{pmatrix},
+    \qquad
+    x_a\in\mathbb R^a,\; x_b\in\mathbb R^b,
+\end{equation}
+and assume
+\begin{equation}
+    x \sim
+    \mathcal N\!\left(
+        \begin{pmatrix}
+            \mu_a\\[2pt]
+            \mu_b
+        \end{pmatrix},
+        \begin{pmatrix}
+            \Sigma_{aa} & \Sigma_{ab} \\
+            \Sigma_{ba} & \Sigma_{bb}
+        \end{pmatrix}
+    \right).
+\end{equation}
+
+Then the following standard results hold:
+
+\begin{itemize}
+    \item \textbf{Marginalization:}
+    \begin{equation}
+        x_a \sim \mathcal N(\mu_a,\Sigma_{aa}),
+        \qquad
+        x_b \sim \mathcal N(\mu_b,\Sigma_{bb}).
+    \end{equation}
+
+    \item \textbf{Conditioning:}
+    \begin{equation}
+        p(x_a \mid x_b)
+        =
+        \mathcal N\!\bigl(
+            \mu_{a\mid b},\,
+            \Sigma_{a\mid b}
+        \bigr),
+    \end{equation}
+    where the conditional mean and covariance are
+    \begin{equation}
+    \begin{aligned}
+        \mu_{a\mid b}
+        &= \mu_a + \Sigma_{ab}\Sigma_{bb}^{-1}(x_b - \mu_b),\\[4pt]
+        \Sigma_{a\mid b}
+        &= \Sigma_{aa} - \Sigma_{ab}\Sigma_{bb}^{-1}\Sigma_{ba}.
+    \end{aligned}
+    \end{equation}
+\end{itemize}
+
+\begin{remark}
+    Intuitively, the matrix $\Sigma_{ab}\Sigma_{bb}^{-1}$ acts as a linear
+    projection that describes how variations in $x_b$ influence our estimate
+    of $x_a$.  
+    It adjusts the mean of $x_a$ in proportion to how far $x_b$ lies from its
+    own mean.
+\end{remark}
+Returning to the main track, the predictive distribution for a test label
+$y_\star$ conditioned on the observed vector $y$ is
+\begin{equation}
+    p(y_\star \mid y)
+    =
+    \mathcal N\!\left(
+        y_\star \mid \mu_\star,\; \Sigma_\star
+    \right),
+\end{equation}
+where the posterior mean is given by
+\begin{equation}
+    \mu_\star
+    =
+    k(x_\star,\cdot)^\top K^{-1} y,
+\end{equation}
+and the posterior variance is
+\begin{equation}
+    \Sigma_\star
+    =
+    k(x_\star,x_\star)
+    - k(x_\star,\cdot)^\top K^{-1} k(x_\star,\cdot).
+\end{equation}
+Assume that the underlying function values $y$ are noise-free, and that in
+practice we only observe
+\begin{equation}
+    \hat y = y + \varepsilon,
+    \qquad 
+    \varepsilon \sim \mathcal{N}(0,\sigma^{2}I).
+\end{equation}
+Under this observation model, one can show that the joint distribution of the
+latent value $y_\star$ at a test point $x_\star$ and the observed vector $\hat y$
+at the training inputs is given by
+\begin{theorem}
+    \begin{equation}
+        \begin{pmatrix}
+            y_\star \\[4pt]
+            \hat y
+        \end{pmatrix}
+        \sim
+        \mathcal{N}\!\left(
+            0,\;
+            \begin{pmatrix}
+                k(x_\star,x_\star) & k(x_\star,\cdot)^\top \\
+                k(x_\star,\cdot)   & K + \sigma^{2} I
+            \end{pmatrix}
+        \right),
+    \end{equation}
+    where $K$ denotes the Gram matrix with entries $K_{ij} = k(x_i,x_j)$.
+\end{theorem}
+\begin{proof}
+    Notice that $\varepsilon$ is independent of $(y_\star,y)$ and $\mathbb E[\varepsilon]=\mathbb E[y_\star]=\mathbb E[y]=0$ :
+    \begin{align*}
+        \mathrm{Cov}(y_\star, y_\star)
+        &= \mathrm{Var}(y_\star)
+         = k(x_\star,x_\star), \\[4pt]
+        \mathrm{Cov}(y_\star, \hat y)
+        &= \mathrm{Cov}\bigl(y_\star,\, y + \varepsilon\bigr) \\
+        &= \mathrm{Cov}(y_\star,y) + \mathrm{Cov}(y_\star,\varepsilon) \\
+        &= k(x_\star,\cdot) + 0
+         = k(x_\star,\cdot), \\[4pt]
+        \mathrm{Cov}(\hat y, \hat y)
+        &= \mathrm{Cov}\bigl(y+\varepsilon,\,y+\varepsilon\bigr) \\
+        &= \mathrm{Cov}(y,y)
+           + \mathrm{Cov}(y,\varepsilon)
+           + \mathrm{Cov}(\varepsilon,y)
+           + \mathrm{Cov}(\varepsilon,\varepsilon) \\
+        &= K + 0 + 0 + \sigma^2 I_n \\
+        &= K + \sigma^2 I_n.
+    \end{align*}    
+\end{proof}
+\begin{corollary}
+    \begin{equation}
+        y_\star\mid \hat y\sim\mathcal N(\mu_\star,\Sigma_\star)
+    \end{equation}
+    where $\mu_\star=k(x_\star)^\top(K+\sigma^2 I)^{-1}\hat y$.
+\end{corollary}
+Comparing the above predictive formulas with \eqref{equ:4.61}, we arrive at a
+striking conclusion:
+\begin{proposition}
+    Linear regression, when viewed from the Bayesian perspective, induces a
+    Gaussian process.
+\end{proposition}
+\begin{proof}
+    Take any finite collection of inputs $\{x_i\}_{i=1}^n \subset \mathcal X$
+    and define
+    \begin{equation}
+        f_i := f(x_i) = w^\top \phi(x_i),\qquad i=1,\dots,n.
+    \end{equation}
+    Stack these values into
+    \begin{equation}
+        f :=
+        \begin{pmatrix}
+            f_1\\
+            \vdots\\
+            f_n
+        \end{pmatrix}
+        \in \mathbb R^n.
+    \end{equation}
+    Let $\Phi \in \mathbb R^{n\times p}$ be the feature matrix
+    \begin{equation}
+        \Phi :=
+        \begin{pmatrix}
+            \phi(x_1)^\top\\
+            \vdots\\
+            \phi(x_n)^\top
+        \end{pmatrix},
+    \end{equation}
+    so that
+    \begin{equation}
+        f = \Phi w.
+    \end{equation}
+
+    With the prior $w \sim \mathcal N(0,\sigma_w^2 I_p)$, $f$ is a linear
+    transformation of a Gaussian vector, hence
+    \begin{equation}
+        f \sim \mathcal N\!\bigl(0,\; \sigma_w^2 \Phi \Phi^\top\bigr).
+    \end{equation}
+    Therefore, for all $i,j$,
+    \begin{equation}
+        \mathrm{Cov}\bigl(f(x_i), f(x_j)\bigr)
+        = \bigl(\sigma_w^2 \Phi \Phi^\top\bigr)_{ij}
+        = \sigma_w^2\, \phi(x_i)^\top \phi(x_j).
+    \end{equation}
+
+    Define the kernel
+    \begin{equation}
+        k(x,x') := \sigma_w^2\, \phi(x)^\top \phi(x').
+    \end{equation}
+    Then for any finite set $\{x_i\}_{i=1}^n$, the vector
+    $(f(x_1),\dots,f(x_n))$ is multivariate Gaussian with mean zero and
+    covariance matrix $[k(x_i,x_j)]_{i,j}$.  By the definition of a
+    Gaussian process, this implies
+    \begin{equation}
+        f \sim \mathcal{GP}\!\bigl(0,\; k(\cdot,\cdot)\bigr).
+    \end{equation}
+
+    Now add Gaussian observation noise:
+    \begin{equation}
+        y_i = f(x_i) + \varepsilon_i,
+        \qquad
+        \varepsilon_i \sim \mathcal N(0,\sigma^2),
+    \end{equation}
+    with $\{\varepsilon_i\}$ i.i.d.\ and independent of $w$.
+    Let $y = f + \varepsilon$ where
+    $\varepsilon \sim \mathcal N(0,\sigma^2 I_n)$.
+    Then $y$ is also Gaussian with
+    \begin{align}
+        \mathrm{Cov}(y_i,y_j)
+        &= \mathrm{Cov}\bigl(f(x_i),f(x_j)\bigr)
+           + \mathrm{Cov}(\varepsilon_i,\varepsilon_j) \\
+        &= \sigma_w^2\, \phi(x_i)^\top \phi(x_j)
+           + \sigma^2 \delta_{ij}.
+    \end{align}
+    Hence the effective covariance function for the observed process is
+    \begin{equation}
+        k_{\mathrm{obs}}(x,x')
+        = \sigma_w^2\, \phi(x)^\top \phi(x') + \sigma^2 \delta_{x,x'},
+    \end{equation}
+    which is exactly the GP regression model with kernel as stated.
+\end{proof}
+\begin{remark}
+    The GP framework is powerful because it allows us to work directly
+    with the covariance kernel $k(x,x')$ rather than introducing a weight
+    vector $w$.  
+    This enables the kernel trick and makes infinite-dimensional feature
+    spaces accessible without ever defining $\phi(x)$ explicitly.
+\end{remark}
+\begin{remark}
+    In practice, Gaussian process regression requires inverting the
+    $n\times n$ covariance matrix $K+\sigma^{2}I$, which has a cubic time
+    complexity $O(n^{3})$ and becomes prohibitive when the dataset is
+    large.  
+    To address this issue, one typically resorts to approximation
+    techniques such as selecting a small set of inducing points or using
+    low-rank and sparse approximations of the kernel matrix.  
+    These methods preserve most of the predictive power of the GP while
+    significantly reducing computational cost.
+\end{remark}
+\section{Gaussian Process Regression (GPR)}
+Review the previous conclusion. Given training inputs $X=\{x_i\}_{i=1}^n$ with observations
+\begin{equation}
+    y = f(X) + \varepsilon,\qquad 
+    \varepsilon \sim \mathcal N(0,\sigma^2 I),
+\end{equation}
+and a test input $x_\star$, the joint distribution between $y$ and the
+latent value $f_\star = f(x_\star)$ is
+\begin{equation}
+    \begin{pmatrix}
+        f_\star \\[4pt]
+        y
+    \end{pmatrix}
+    \sim
+    \mathcal N\!\left(
+        0,\;
+        \begin{pmatrix}
+            k(x_\star,x_\star) & k(x_\star,X)^\top \\[4pt]
+            k(x_\star,X)       & K + \sigma^2 I
+        \end{pmatrix}
+    \right),
+\end{equation}
+where
+\begin{equation}
+    K_{ij} = k(x_i,x_j),\qquad
+    k(x_\star,X)
+    =
+    \begin{pmatrix}
+        k(x_\star,x_1)\\
+        \vdots\\
+        k(x_\star,x_n)
+    \end{pmatrix}.
+\end{equation}
+
+Conditioning on the observed vector $y$, the predictive distribution of
+$f_\star$ is Gaussian:
+\begin{equation}
+    f_\star \mid y
+    \sim
+    \mathcal N\!\bigl(
+        \mu_\star,\;
+        \Sigma_\star
+    \bigr),
+\end{equation}
+with mean
+\begin{equation}
+    \mu_\star
+    = k(x_\star,X)^\top (K + \sigma^2 I)^{-1} y,
+\end{equation}
+and predictive variance
+\begin{equation}
+    \Sigma_\star
+    = k(x_\star,x_\star)
+      - k(x_\star,X)^\top (K + \sigma^2 I)^{-1} k(x_\star,X).
+\end{equation}
+
+\begin{remark}
+    Consider the RBF kernel
+    \begin{equation}
+        k_\ell(x,x')
+        = \sigma_f^2 \exp\!\left(
+            -\frac{\|x - x'\|^2}{2\ell^2}
+        \right),
+    \end{equation}
+    where $\ell > 0$ is the length-scale parameter.  
+    \begin{center}
+        \includegraphics{../../tikz/7/2.pdf}
+    \end{center}
+    For any fixed $x,x'$, we have
+    \begin{equation}
+        \lim_{\ell \to 0} k_\ell(x,x')
+        =
+        \begin{cases}
+            \sigma_f^2, & x = x',\\[4pt]
+            0,          & x \neq x'.
+        \end{cases}
+    \end{equation}
+    In particular, for distinct training inputs $\{x_i\}_{i=1}^n$, the
+    Gram matrix $K_\ell$ converges to a diagonal matrix:
+    \begin{equation}
+        \lim_{\ell \to 0} K_\ell
+        = \sigma_f^2 I_n.
+    \end{equation}
+
+    In the noise-free case (i.e.\ $\sigma^2 = 0$ in the observation
+    model), the predictive mean at a training point $x_j$ is
+    \begin{equation}
+        \mu_\ell(x_j)
+        = k_\ell(x_j,X)^\top K_\ell^{-1} y.
+    \end{equation}
+    In the limit $\ell \to 0$, we have
+    \begin{equation}
+        k_\ell(x_j,X)
+        \;\longrightarrow\;
+        \sigma_f^2 e_j,
+        \qquad
+        K_\ell^{-1}
+        \;\longrightarrow\;
+        \frac{1}{\sigma_f^2} I_n,
+    \end{equation}
+    where $e_j$ is the $j$-th standard basis vector in $\mathbb R^n$.
+    Hence
+    \begin{equation}
+        \lim_{\ell \to 0} \mu_\ell(x_j)
+        = \sigma_f^2 e_j^\top \Bigl(\tfrac{1}{\sigma_f^2} I_n\Bigr) y
+        = e_j^\top y
+        = y_j.
+    \end{equation}
+    That is, in the limit $\ell \to 0$, the GP interpolates the data
+    exactly at every training input: each training point is matched
+    perfectly by the predictive mean.
+\end{remark}
+
+\end{document}

@@ -347,7 +347,7 @@ This principle is known as \textbf{Structural Risk Minimization} (SRM).
 \subsection{Preliminaries from Convex Analysis*}
 \begin{tcolorbox}
     \vspace{0.5em}
-        \color{red!50!black}$\circledast   $\quad\emph{\textbf{This subsection is included out of personal interest and is not part of the course material. 
+        \color{red!50!black}$\circledast   $\quad\emph{{This subsection is included out of personal interest and is not part of the course material. 
         Readers who wish to focus solely on the course content may safely skip to the next subsection.}}
     \vspace{0.5em}
 \end{tcolorbox}
@@ -557,6 +557,7 @@ often with additional computational and theoretical advantages, as in the case o
     \end{equation}
     \end{theorem}
 \begin{definition}[Hilbert Space]
+    \label{def:3.4}
     A \textbf{Hilbert space} is a complete inner product space.  
     % Formally, let $\mathcal{H}$ be a vector space over $\mathbb{R}$ or $\mathbb{C}$ endowed with an inner product
     % \begin{equation}
@@ -871,27 +872,27 @@ Mercer’s Theorem provides the precise answer to this problem.
 \begin{theorem}[Mercer’s Theorem (Finite case)]
     A symmetric function $K(x, x')$ is a valid kernel if and only if, for any finite set $\{x_1, \dots, x_n\} \subset \mathcal{X}$, the Gram matrix 
     \begin{equation}
-        \mathbf{K}_{ij} = K(x_i, x_j)
+        K_{ij} = K(x_i, x_j)
     \end{equation}
     is positive semidefinite, i.e.
     \begin{equation}
-        \forall c \in \mathbb{R}^n, \quad c^\top \mathbf{K} c \ge 0.
+        \forall c \in \mathbb{R}^n, \quad c^\top K c \ge 0.
     \end{equation}
 \end{theorem}
     \begin{proof}
         In the finite-dimensional case.Let $\{x_1, \dots, x_n\} \subset \mathcal{X}$ be any finite subset, and 
-        define the Gram matrix $\mathbf{K} \in \mathbb{R}^{n \times n}$ by
+        define the Gram matrix $K \in \mathbb{R}^{n \times n}$ by
         \begin{equation}
-            \mathbf{K}_{ij} = K(x_i, x_j), \qquad i,j = 1,\dots,n.
+            K_{ij} = K(x_i, x_j), \qquad i,j = 1,\dots,n.
         \end{equation}
-        Since $K$ is symmetric, we have $\mathbf{K} = \mathbf{K}^\top$.
+        Since $K$ is symmetric, we have $K = K^\top$.
         
         By the spectral theorem for real symmetric matrices, 
         there exists an orthonormal basis of eigenvectors 
         $\{v_1, \dots, v_n\}$ and corresponding real eigenvalues 
         $\lambda_1, \dots, \lambda_n$ such that
         \begin{equation}
-            \mathbf{K} = V \Lambda V^\top,
+            K = V \Lambda V^\top,
         \end{equation}
         where $V = [v_1,\dots,v_n]$ is orthogonal and 
         $\Lambda = \operatorname{diag}(\lambda_1,\dots,\lambda_n)$.
@@ -899,7 +900,7 @@ Mercer’s Theorem provides the precise answer to this problem.
         The kernel $K$ being positive semidefinite implies that
         for all $c \in \mathbb{R}^n$,
         \begin{equation}
-            c^\top \mathbf{K} c 
+            c^\top K c 
         = \sum_{i,j} c_i K(x_i, x_j) c_j \ge 0,
         \end{equation}
         which in turn implies $\lambda_i \ge 0$ for all $i$.
@@ -912,7 +913,7 @@ Mercer’s Theorem provides the precise answer to this problem.
         Then for any $x_p, x_q \in \{x_1, \dots, x_n\}$,
         \begin{align}
         K(x_p, x_q)
-        &= \mathbf{K}_{pq}
+        &= K_{pq}
          = \sum_{i=1}^n \lambda_i v_i(p) v_i(q)
          = \sum_{i=1}^n \phi_i(x_p)\, \phi_i(x_q).
         \end{align}
@@ -1042,10 +1043,66 @@ where \(C > 0\) is a hyperparameter controlling the trade-off between maximizing
 
 In this way, the model, known as the \textbf{Soft-Margin SVM}, allows small violations of the margin to achieve a better balance between robustness and generalization. This is the most commonly used form of SVM in practice.
 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics{../../tikz/3/3.pdf}
-%     \caption{Hinge loss and CE loss.}
-%     \label{3-svm}
-% \end{figure}
+\vspace{1em}
+
+We claim that the constraints on the slack variables are equivalent to the following formulation:
+\begin{equation}
+    \xi_i \ge \max(0,\, 1 - y_i(w^\top x_i + b)).
+\end{equation}
+
+In the minimization problem 
+\begin{equation}
+    \arg\min_{w,b,\xi}\ \frac{1}{2}\|w\|^2 + C\sum_i \xi_i,
+\end{equation}
+it is crucial to observe that each $\xi_i$ will always take the minimal feasible value,either $0$ or $1 - y_i(w^\top x_i + b)$.  
+Otherwise, if $\xi_i$ were larger than necessary, the objective $\sum_i \xi_i$ could be further reduced by decreasing $\xi_i$.  
+
+Thus, the optimization problem can be reformulated as an unconstrained objective:
+\begin{equation}
+    \argmin_{w,b}\ \frac{1}{2}\|w\|^2 + C\sum_{i=1}^n \max(0,\, 1 - y_i(w^\top x_i + b)).
+\end{equation}
+
+This formulation introduces the \textbf{Hinge loss}.
+
+\begin{definition}[Hinge loss]
+The hinge loss function $L(z)$ is defined as:
+\begin{equation}
+    L(z) = \max(0,\, 1 - z).
+\end{equation}
+\end{definition}
+\begin{figure}[H]
+    \centering
+    \includegraphics{../../tikz/3/3.pdf}
+    \caption{Hinge loss and CE loss.}
+    \label{4-svm}
+\end{figure}
+Intuitively, the hinge loss $L_{\rm hinge}(t)$ remains zero when $t \ge 1$.  
+This property directly enforces a margin: samples that already lie beyond the decision boundary (i.e., sufficiently far from the separating hyperplane) incur no loss,  
+while those within or on the wrong side of the margin contribute a positive penalty.  
+In this sense, the hinge loss explicitly encourages a wider margin between classes.
+
+For comparison, consider the cross-entropy loss:
+\begin{equation}
+    -\log(\sigma(z)) = \log(1 + e^{-z}),
+\end{equation}
+where $\sigma(z)$ denotes the sigmoid function.  
+
+\begin{remark}
+    In class, we used $\log_2$ instead of the natural logarithm, leading to an approximation when $x\to -\infty$:
+    \begin{equation}
+        \log(1 + e^{-z}) \sim \frac{-z}{\log_2 e},
+    \end{equation}
+    which results in a slightly different scaling in the plotted curve.
+\end{remark}
+
+Both the cross-entropy loss and the hinge loss serve as \emph{substitute losses} for the zero-one loss:
+\begin{equation}
+    L_{\rm zero\text{-}one}(z) =
+    \begin{cases}
+        1, & z < 0,\\[4pt]
+        0, & z \ge 0.
+    \end{cases}
+\end{equation}
+The zero-one loss is non-differentiable and provides no gradient information,  
+so gradient-based optimization methods cannot be directly applied in this case.
 \end{document}
