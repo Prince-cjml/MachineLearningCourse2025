@@ -90,8 +90,8 @@ Each function evaluation requires a full train--validate cycle and is therefore
 very costly, so we must find good $x$ using as \emph{few} evaluations as
 possible.
 
-\begin{remark}[Basic Bayesian Optimization Loop]
-    Bayesian Optimization with a GP surrogate proceeds iteratively:
+\begin{remark}
+        Bayesian Optimization with a GP surrogate proceeds iteratively:
     \begin{enumerate}
         \item \textbf{Initialization.}  Select an initial design
         $\{x_i\}_{i=1}^n$ (e.g.\ random or space-filling) and evaluate
@@ -164,7 +164,7 @@ In practice, BO alternates between refining the surrogate in regions where data
 are scarce and zooming in on promising areas, progressively improving our
 estimate of both the location and value of the optimum.
 
-\begin{remark}[Practical Bayesian Optimization]
+\begin{remark}
     Many modern hyperparameter optimization libraries implement Bayesian
     Optimization with GP or related surrogates.  For example, \texttt{Optuna}
     provides a flexible interface where the user specifies:
@@ -502,7 +502,7 @@ Cross-entropy decomposes into:
 \end{equation}
 meaning that cross-entropy is always at least as large as entropy and grows
 with the divergence between $P$ and $Q$.
-\begin{remark}[Huffman Coding]
+\begin{remark}
     Huffman coding is a greedy algorithm for constructing an optimal
     prefix-free code when the symbol probabilities are known.
     More frequent symbols receive shorter codewords and rare symbols receive
@@ -782,8 +782,6 @@ For feature selection, we choose the feature that minimizes the conditional Gini
     For binary classification, the Gini index and entropy (scaled by $1/2$) are very similar functions of the class probability $p$.  Both achieve their minimum at $p \in \{0,1\}$ and maximum at $p = 1/2$.
 \end{remark}
 
-\subsection{Feature Selection for Regression}
-
 For regression problems, where labels are continuous, we use a different criterion based on squared loss.
 
 \begin{definition}[L2 Loss Criterion]
@@ -834,11 +832,11 @@ The greedy algorithm builds the tree recursively:
     \textbf{Prediction:} For a test example, traverse the tree according to its feature values until reaching a leaf node, then use the leaf's label as the prediction.
 
 
-\begin{remark}[Computational Complexity]
+\begin{remark}
     The naive approach of enumerating all possible trees would require exploring all permutations of feature selection orders, leading to super-exponential complexity.  The greedy algorithm reduces this to polynomial time by making locally optimal choices at each step, though it does not guarantee global optimality.
 \end{remark}
 
-\begin{remark}[Regularization]
+\begin{remark}
     To prevent overfitting, common regularization techniques include:
     \begin{itemize}
         \item Limiting the maximum depth of the tree.
