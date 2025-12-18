@@ -10,7 +10,7 @@
     \item Boosting and Functional Gradient View
 \end{introduction}
 
-\section{Review: Gaussian Processes and Bayesian Optimization}
+\section*{Review: Gaussian Processes and Bayesian Optimization}
 
 In the previous chapter, we introduced Gaussian Processes (GPs) and showed how
 they can be used for regression.  Given training inputs
@@ -58,7 +58,7 @@ By evaluating $\mu_\star$ at many test points and optionally plotting
 $\mu_\star \pm \sigma_\star$, we obtain a smooth predictive curve together with
 credible intervals that quantify uncertainty.
 
-\subsection{Black-Box Optimization with Gaussian Processes}
+\subsection*{Black-Box Optimization with Gaussian Processes}
 
 An important application of GP regression is \emph{Bayesian Optimization} (BO),
 which addresses \emph{black-box optimization} problems:
@@ -117,7 +117,7 @@ possible.
     $\mu(x)$ is large).
 \end{remark}
 
-\subsection{Acquisition Functions}
+\subsection*{Acquisition Functions}
 
 Let $y_{\max}$ denote the best function value observed so far, and suppose the
 GP posterior at $x$ is Gaussian:
@@ -176,105 +176,6 @@ estimate of both the location and value of the optimum.
     The library then automatically manages the BO loop, returning (approximately)
     optimal hyperparameters within the given budget.
 \end{remark}
-
-\section{Bias--Variance Decomposition}
-
-Consider a supervised learning setting with training dataset $D$, drawn from
-some unknown data-generating distribution.  Let $x$ denote a test input with
-true label $y$, and let
-\begin{equation}
-    f(x;D)
-\end{equation}
-denote the prediction of a learning algorithm trained on $D$ when evaluated at
-$x$.  Under squared loss, the prediction error at $(x,y)$ for a given training
-set $D$ is
-\begin{equation}
-    \bigl(f(x;D) - y\bigr)^2.
-\end{equation}
-Since $D$ is random, it is natural to measure performance by averaging over the
-random draw of $D$.  We therefore consider
-\begin{equation}
-    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr],
-\end{equation}
-which quantifies the expected squared error at $x$, averaged over the
-randomness in the training data.
-
-Define the \emph{average prediction} at $x$ as
-\begin{equation}
-    \bar{f}(x)
-    := \mathbb{E}_{D}\bigl[f(x;D)\bigr],
-\end{equation}
-that is, the expected prediction we would obtain if we could repeatedly sample
-training sets $D$ from the underlying distribution and retrain the model.
-Insert and subtract $\bar{f}(x)$ inside the square:
-\begin{align}
-    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr]
-    &= \mathbb{E}_{D}
-       \Bigl[\bigl(f(x;D) - \bar{f}(x) + \bar{f}(x) - y\bigr)^2\Bigr]\\
-    &= \mathbb{E}_{D}
-       \Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)^2\Bigr]
-       + \bigl(\bar{f}(x) - y\bigr)^2\\
-    &\quad
-       + 2\,\mathbb{E}_{D}\Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)\bigl(\bar{f}(x) - y\bigr)\Bigr].
-\end{align}
-The cross term vanishes because
-\begin{equation}
-    \mathbb{E}_{D}[f(x;D) - \bar{f}(x)]
-    = \mathbb{E}_{D}[f(x;D)] - \bar{f}(x) = 0,
-\end{equation}
-and $\bar{f}(x)-y$ does not depend on $D$.  Hence
-\begin{equation}
-    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr]
-    =
-    \underbrace{\mathbb{E}_{D}
-    \Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)^2\Bigr]}_{\text{variance at }x}
-    +
-    \underbrace{\bigl(\bar{f}(x) - y\bigr)^2}_{\text{bias}^2 \text{ at }x}.
-\end{equation}
-
-\begin{definition}[Bias and variance at a test point]
-    For a fixed test input $x$ with true label $y$, the
-    \emph{variance} and \emph{(squared) bias} of a learning algorithm are
-    defined as
-    \begin{align}
-        \mathrm{Var}_D\bigl[f(x;D)\bigr]
-        &= \mathbb{E}_{D}
-           \Bigl[\bigl(f(x;D)-\bar{f}(x)\bigr)^2\Bigr],\\
-        \mathrm{Bias}^2(x)
-        &= \bigl(\bar{f}(x) - y\bigr)^2.
-    \end{align}
-\end{definition}
-
-Intuitively:
-\begin{itemize}
-    \item The variance term measures how sensitive the predictor $f(x;D)$ is to
-    fluctuations in the training data: for different draws of $D$, predictions
-    at $x$ may vary significantly around their mean $\bar{f}(x)$.
-    \item The bias term measures how far, on average, the prediction is from
-    the true label $y$.  Even if we could train on infinitely many different
-    datasets, the average predictor $\bar{f}(x)$ might still systematically
-    miss the true target due to limited model capacity or misspecification.
-\end{itemize}
-
-High variance typically arises from \emph{overfitting} particular training sets,
-while high bias indicates that the model class itself is too simple to capture
-the underlying relationship, even when averaged over many datasets.
-
-\begin{example}[Linear model on nonlinear data]
-    Suppose the data arise from a quadratic relationship, but we insist on
-    fitting a linear model.  Even if we repeatedly resample training sets and
-    average the resulting fitted lines, the averaged predictor $\bar{f}(x)$
-    remains linear and cannot match the true quadratic curve everywhere.  This
-    manifests as a persistent bias term.
-\end{example}
-
-Bias and variance suggest complementary strategies:
-\begin{itemize}
-    \item To reduce \textbf{variance}, we can increase the training set size or
-    average multiple diverse models (as in bagging and random forests).
-    \item To reduce \textbf{bias}, we can increase model capacity, e.g.\ by
-    using more flexible hypothesis classes or boosting weak learners.
-\end{itemize}
 
 \section{Decision Trees and Feature Selection}
 
@@ -919,6 +820,104 @@ base learners (often decision trees) to form a stronger model.
     The key idea is that even if each $f_m$ is only moderately accurate, their
     combination can be significantly more accurate and more robust.
 \end{definition}
+
+\subsection{Bias--Variance Decomposition}
+Consider a supervised learning setting with training dataset $D$, drawn from
+some unknown data-generating distribution.  Let $x$ denote a test input with
+true label $y$, and let
+\begin{equation}
+    f(x;D)
+\end{equation}
+denote the prediction of a learning algorithm trained on $D$ when evaluated at
+$x$.  Under squared loss, the prediction error at $(x,y)$ for a given training
+set $D$ is
+\begin{equation}
+    \bigl(f(x;D) - y\bigr)^2.
+\end{equation}
+Since $D$ is random, it is natural to measure performance by averaging over the
+random draw of $D$.  We therefore consider
+\begin{equation}
+    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr],
+\end{equation}
+which quantifies the expected squared error at $x$, averaged over the
+randomness in the training data.
+
+Define the \emph{average prediction} at $x$ as
+\begin{equation}
+    \bar{f}(x)
+    := \mathbb{E}_{D}\bigl[f(x;D)\bigr],
+\end{equation}
+that is, the expected prediction we would obtain if we could repeatedly sample
+training sets $D$ from the underlying distribution and retrain the model.
+Insert and subtract $\bar{f}(x)$ inside the square:
+\begin{align}
+    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr]
+    &= \mathbb{E}_{D}
+       \Bigl[\bigl(f(x;D) - \bar{f}(x) + \bar{f}(x) - y\bigr)^2\Bigr]\\
+    &= \mathbb{E}_{D}
+       \Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)^2\Bigr]
+       + \bigl(\bar{f}(x) - y\bigr)^2\\
+    &\quad
+       + 2\,\mathbb{E}_{D}\Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)\bigl(\bar{f}(x) - y\bigr)\Bigr].
+\end{align}
+The cross term vanishes because
+\begin{equation}
+    \mathbb{E}_{D}[f(x;D) - \bar{f}(x)]
+    = \mathbb{E}_{D}[f(x;D)] - \bar{f}(x) = 0,
+\end{equation}
+and $\bar{f}(x)-y$ does not depend on $D$.  Hence
+\begin{equation}
+    \mathbb{E}_{D}\Bigl[\bigl(f(x;D) - y\bigr)^2\Bigr]
+    =
+    \underbrace{\mathbb{E}_{D}
+    \Bigl[\bigl(f(x;D) - \bar{f}(x)\bigr)^2\Bigr]}_{\text{variance at }x}
+    +
+    \underbrace{\bigl(\bar{f}(x) - y\bigr)^2}_{\text{bias}^2 \text{ at }x}.
+\end{equation}
+
+\begin{definition}[Bias and variance at a test point]
+    For a fixed test input $x$ with true label $y$, the
+    \emph{variance} and \emph{(squared) bias} of a learning algorithm are
+    defined as
+    \begin{align}
+        \mathrm{Var}_D\bigl[f(x;D)\bigr]
+        &= \mathbb{E}_{D}
+           \Bigl[\bigl(f(x;D)-\bar{f}(x)\bigr)^2\Bigr],\\
+        \mathrm{Bias}^2(x)
+        &= \bigl(\bar{f}(x) - y\bigr)^2.
+    \end{align}
+\end{definition}
+
+Intuitively:
+\begin{itemize}
+    \item The variance term measures how sensitive the predictor $f(x;D)$ is to
+    fluctuations in the training data: for different draws of $D$, predictions
+    at $x$ may vary significantly around their mean $\bar{f}(x)$.
+    \item The bias term measures how far, on average, the prediction is from
+    the true label $y$.  Even if we could train on infinitely many different
+    datasets, the average predictor $\bar{f}(x)$ might still systematically
+    miss the true target due to limited model capacity or misspecification.
+\end{itemize}
+
+High variance typically arises from \emph{overfitting} particular training sets,
+while high bias indicates that the model class itself is too simple to capture
+the underlying relationship, even when averaged over many datasets.
+
+\begin{example}[Linear model on nonlinear data]
+    Suppose the data arise from a quadratic relationship, but we insist on
+    fitting a linear model.  Even if we repeatedly resample training sets and
+    average the resulting fitted lines, the averaged predictor $\bar{f}(x)$
+    remains linear and cannot match the true quadratic curve everywhere.  This
+    manifests as a persistent bias term.
+\end{example}
+
+Bias and variance suggest complementary strategies:
+\begin{itemize}
+    \item To reduce \textbf{variance}, we can increase the training set size or
+    average multiple diverse models (as in bagging and random forests).
+    \item To reduce \textbf{bias}, we can increase model capacity, e.g.\ by
+    using more flexible hypothesis classes or boosting weak learners.
+\end{itemize}
 
 Two classical ensemble strategies are:
 \begin{itemize}

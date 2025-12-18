@@ -8,9 +8,7 @@
 \item Sigmoid Regression
 \item Maximum a posteriori
 \end{introduction}
-\section{Classification}
-
-  \subsection{Binary Classification Problem}
+\section{Binary Classification}
 
 Settings.
 \begin{itemize}
@@ -58,7 +56,7 @@ We ensure this property by choosing the orientation of $w$ accordingly.
   \centering
   \includegraphics{../../tikz/2/2.pdf}
   \caption{Classification by heperplane.}
-  \label{2-lr}
+  \label{fig:2-hyperplane}
 \end{figure}
 
 
@@ -182,7 +180,7 @@ If for all $i$, we have $y_i = P(y=1 \mid x_i)$, then the model predicts every l
   If all points can be separated by a linear model without error, we say the dataset is {linearly separable}.
 \end{definition}
 
-Example \ref{2-lr} is linearly separable, and the final state leads to $\|W\| \to \infty, \quad \|b\| \to \infty$. However, this situation is not desirable in practice, since it implies poor robustness. Hence a natural question arises: under the condition of linear separability, how can we find a well-chosen separating hyperplane that maximizes robustness? The answer will be presented in the next chapter, where we introduce the Support Vector Machine (SVM). The SVM optimizes $\hat w, \hat b$ by maximizing the margin (the distance between data points and the separating hyperplane), instead of simply minimizing the cross-entropy loss.
+Figure~\ref{fig:2-hyperplane} illustrates a linearly separable setting, and the final state leads to $\|W\| \to \infty, \quad \|b\| \to \infty$. However, this situation is not desirable in practice, since it implies poor robustness. Hence a natural question arises: under the condition of linear separability, how can we find a well-chosen separating hyperplane that maximizes robustness? The answer will be presented in the next chapter, where we introduce the Support Vector Machine (SVM). The SVM optimizes $\hat w, \hat b$ by maximizing the margin (the distance between data points and the separating hyperplane), instead of simply minimizing the cross-entropy loss.
 
 Although logistic regression may suffer from divergence of parameters under separable data, it often achieves better performance than SVM in practice, due to the following reasons:
 \begin{enumerate}
@@ -261,7 +259,7 @@ which leads to the following optimization problem:
   \centering
   \includegraphics{../../tikz/2/3.pdf}
   \caption{Normal distribution (95\%).}
-  \label{2-lr}
+  \label{fig:2-normal}
 \end{figure}
 While the Central Limit Theorem (CLT) does not imply that most datasets are normally distributed, 
 it motivates modeling additive noise as Gaussian. We assume:

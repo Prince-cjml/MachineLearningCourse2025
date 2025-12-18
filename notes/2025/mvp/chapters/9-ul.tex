@@ -4,6 +4,7 @@
 \begin{introduction}
     \item Dimensionality reduction
     \item Cluster
+    \item Latent-variable models and the EM algorithm
 \end{introduction}
 All methods we have discussed so far fall under the category of \textbf{supervised learning}, where the training process relies on labeled data and the model is explicitly guided by pairs $(x,y)$.  
 In contrast, \textbf{unsupervised learning} operates without labels: the goal is to learn the underlying structure of the data and to approximate the distribution of datapoints $x$ itself.
@@ -275,7 +276,7 @@ $
 }
 
 \begin{equation}
-  \hat{X} \in \mathbb{R}^{n\times d}
+  \hat{X}_{\mathbb{R}^{n\times d}}
   =
   \mblock{blue}{ U_{X\,\mathbb{R}^{n\times r}}}\,
   \mblock{green}{\begin{pmatrix}
@@ -566,86 +567,131 @@ Since MoG is a \emph{generative model}, the marginal density of \(x\) is obtaine
 instead of forcing each point into exactly one cluster,  
 it allows fractional responsibilities and models not only the center but also the spread and orientation of each cluster.
 \end{note}
-We introduce the latent variable
-$
-    Z := (Z_1, Z_2, \ldots, Z_K)^\top,
-$
-where each \(Z_k \in \{0,1\}\) and
+\section{Latent Variable Models and the EM Algorithm}
+\subsection{Latent-variable MLE and why it is hard}
+MoG is a \emph{latent-variable} model: for each datapoint $x_i$ there is an
+unobserved cluster indicator.  We will use the lighter integer notation
 \begin{equation}
-    \sum_{k=1}^{K} Z_k = 1.
+    G_i \in \{1,2,\dots,K\},
 \end{equation}
-Thus \(Z\) is a \textbf{one-hot encoding }indicating which Gaussian component generates the observation \(X\).
-\begin{definition}[One–Hot Encoding]
-    For a categorical variable taking one of \(K\) possible states, its \emph{one–hot encoding} is the vector
-    \begin{equation}
-        Z = (Z_1, Z_2, \ldots, Z_K)^\top \in \{0,1\}^K,
-    \end{equation}
-    where exactly one entry equals \(1\) and all others equal \(0\):
-    \begin{equation}
-        \sum_{k=1}^{K} Z_k = 1.
-    \end{equation}
-    If the variable takes state \(k\), then \(Z_k = 1\) and \(Z_j = 0\) for all \(j \neq k\).
-    \end{definition}
-Using this notation, the mixture density becomes
-\begin{equation}
-    P(x)
-    =
-    \sum_{z} P(x \mid z)\, P(z)
-    =
-    \sum_{k=1}^{K}
-        \pi_k\, \mathcal{N}(x \mid \mu_k, \Sigma_k).
-\end{equation}
+where $G_i=k$ means $x_i$ is generated from component $k$.
+(This is equivalent to one-hot encoding used elsewhere.)
 
-We aim to estimate the parameters
+The marginal likelihood for each datapoint is
 \begin{equation}
-    \Theta = \{\pi_k, \mu_k, \Sigma_k\}_{k=1}^{K}
+    p(x_i;\theta)=\sum_{k=1}^K \pi_k\,\mathcal N(x_i\mid \mu_k,\Sigma_k),
 \end{equation}
-from data \(x_1,\ldots,x_n\) via maximum likelihood estimation.  
-The log-likelihood is
-\begin{equation}
-    \argmax_{\Theta}
+thus the MLE objective becomes
+\begin{equation}\label{eq:ul-mog-mle}
+    \argmax_{\theta}\;
     \sum_{i=1}^{n}
-        \log P(x_i)
-    =
-    \argmax_{\Theta}
-    \sum_{i=1}^{n}
-        \log\!\bigg(
-            {\color{red}\sum_{k=1}^{K}}
+        \log\!\left(
+            \sum_{k=1}^{K}
                 \pi_k\, \mathcal{N}(x_i \mid \mu_k, \Sigma_k)
-        \bigg).
+        \right),
+\end{equation}
+where $\theta=\{\pi_k,\mu_k,\Sigma_k\}_{k=1}^K$.
+
+\begin{remark}
+    The difficulty is the \textbf{log of a sum}, which couples all components.
+    Moreover, $\sum_k\pi_k=1$ and each $\Sigma_k$ must be positive definite,
+    making naive unconstrained gradient descent non-trivial.
+\end{remark}
+
+\subsection{KL divergence and ELBO (evidence lower bound)}
+To derive EM in a general and reusable way, we introduce KL divergence.
+\begin{definition}[Kullback--Leibler divergence]
+    For distributions $Q,P$ on the same variable $Z$,
+    \begin{equation}
+        \mathrm{KL}(Q\|P)
+        := \mathbb E_{Z\sim Q}\!\left[\log\frac{Q(Z)}{P(Z)}\right].
+    \end{equation}
+\end{definition}
+
+\begin{proposition}\label{prop:ul-kl}
+    $\mathrm{KL}(Q\|P)\ge 0$, and $\mathrm{KL}(Q\|P)=0$ iff $Q=P$ (a.s.).
+\end{proposition}
+
+\begin{theorem}[ELBO decomposition]\label{thm:ul-elbo}
+    For any $q(z)$ and any $\theta$,
+    \begin{equation}\label{eq:ul-elbo}
+        \log p(x;\theta)
+        =
+        \underbrace{
+        \mathbb E_{z\sim q}\!\left[\log \frac{p(x,z;\theta)}{q(z)}\right]
+        }_{\mathcal L(q,\theta)\;\;(\text{ELBO})}
+        +
+        \underbrace{
+        \mathrm{KL}\!\left(q(z)\,\middle\|\,p(z\mid x;\theta)\right)
+        }_{\ge 0}.
+    \end{equation}
+    Hence $\mathcal L(q,\theta)\le \log p(x;\theta)$.
+\end{theorem}
+
+\begin{remark}
+    ELBO is commonly read as ``elbow'' in talks.
+    The bound is tight when $q(z)=p(z\mid x;\theta)$.
+\end{remark}
+
+\subsection{The EM algorithm (Expectation--Maximization)}
+EM alternates between optimizing the variational distribution $q$ and the model
+parameters $\theta$.
+
+\textbf{E-step (fix $\theta$).}
+Given $\theta^{(t)}$, maximize ELBO in $q$:
+\begin{equation}
+    q^{(t+1)}(z)=p(z\mid x;\theta^{(t)}),
+\end{equation}
+which drives the KL gap in \eqref{eq:ul-elbo} to $0$ at $\theta^{(t)}$.
+
+\textbf{M-step (fix $q$).}
+With $q^{(t+1)}$ fixed, update parameters by maximizing ELBO:
+\begin{equation}
+    \theta^{(t+1)}\in\argmax_{\theta}\; \mathcal L\!\left(q^{(t+1)},\theta\right).
+\end{equation}
+Because the $-\mathbb E_{q^{(t+1)}}[\log q^{(t+1)}]$ term does not depend on
+$\theta$, this is equivalent to maximizing the expected complete-data
+log-likelihood
+\begin{equation}
+    Q(\theta\mid \theta^{(t)})
+    :=
+    \mathbb E_{z\sim p(z\mid x;\theta^{(t)})}\!\left[\log p(x,z;\theta)\right].
 \end{equation}
 
-Direct optimization is difficult because of the logarithm of a sum.  
-In contrast, if the latent assignment were known, that is, if for each \(x_i\) we knew which \(Z_{ik}=1\), then the complete-data likelihood would factorize:
+\begin{remark}
+    Repeating E-step $\rightarrow$ M-step yields a monotone (non-decreasing)
+    data log-likelihood sequence, and EM converges to a stationary point (not
+    necessarily the global optimum).
+\end{remark}
+
+\subsection{EM for MoG: responsibilities and closed-form updates}
+For MoG, the complete-data likelihood for one datapoint is
 \begin{equation}
-    P(x_i, Z_{ik}=1)
+    p(x_i,G_i=k;\theta)
+    = \pi_k\,\mathcal N(x_i\mid \mu_k,\Sigma_k).
+\end{equation}
+
+\textbf{E-step.} Compute posterior responsibilities
+\begin{equation}
+    \gamma_{ik}
+    :=
+    p(G_i=k\mid x_i;\theta^{(t)})
     =
-    \pi_k\, \mathcal{N}(x_i \mid \mu_k, \Sigma_k),
-\end{equation}
-and maximizing with respect to \(\pi_k, \mu_k, \Sigma_k\) reduces to fitting separated Gaussian clusters, which is straightforward. This gap motivates the \textbf{Expectation–Maximization (EM) algorithm}.  
-
-EM initializes with soft assignments 
-\(\gamma_{ik} \in [0,1]\) satisfying
-\begin{equation}
-    \sum_{k=1}^{K} \gamma_{ik} = 1, \qquad \forall\, i\in[n],
-\end{equation}
-where \(\gamma_{ik}\) serves as the initial responsibility of cluster \(k\) for data point \(x_i\).
-
-EM alternates between:
-
-\textbf{E-step:} compute posterior responsibilities
-\begin{equation}
-    \gamma_{ik}:=P(Z_{ik}=1 \mid x_i)
-    =
-    \frac{\pi_k\, \mathcal{N}(x_i \mid \mu_k, \Sigma_k)}
-         {\sum_{j\in[K]}  \pi_j\, \mathcal{N}(x_i \mid \mu_j, \Sigma_j)},
+    \frac{\pi_k^{(t)}\, \mathcal{N}(x_i \mid \mu_k^{(t)}, \Sigma_k^{(t)})}
+         {\sum_{j=1}^{K} \pi_j^{(t)}\, \mathcal{N}(x_i \mid \mu_j^{(t)}, \Sigma_j^{(t)})}.
 \end{equation}
 
-\textbf{M-step:} maximize the expected complete-data log-likelihood to update \(\pi_k\), \(\mu_k\), and \(\Sigma_k\):
+\textbf{M-step.} Let $N_k:=\sum_{i=1}^n\gamma_{ik}$. Then the maximizer has
+closed-form updates:
 \begin{gather}
-    \mu_k=\frac{\sum_{i\in[n]}  \gamma_{ij}x_i}{\sum_{i\in[n]} \gamma_{ik}}\\
-    \Sigma_k=\frac{\sum_{i\in[n]}  \gamma_{ik}(x_i-\mu_k)(x_i-\mu_k)^{\top}}
-    {\sum_{i\in[n]} \gamma_{ik}}\\
-    \pi_k=\frac{\sum_{i\in[n]} \gamma_{ik}}{n}
+    \pi_k=\frac{N_k}{n},\\
+    \mu_k=\frac{1}{N_k}\sum_{i=1}^n \gamma_{ik}x_i,\\
+    \Sigma_k=\frac{1}{N_k}\sum_{i=1}^n \gamma_{ik}(x_i-\mu_k)(x_i-\mu_k)^{\top}.
 \end{gather}
+
+\begin{remark}
+    These are \textbf{soft-assignment weighted} empirical mean and covariance.
+    When responsibilities collapse to hard assignments, MoG-EM reduces to the
+    familiar K-means updates.
+\end{remark}
 \end{document}

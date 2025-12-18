@@ -237,7 +237,8 @@ Geometrically, we obtain:
 \begin{figure}[H]
     \centering
     \includegraphics{../../tikz/3/1.pdf}
-    \label{2-lr}
+    \caption{Distance from a point to a hyperplane.}
+    \label{fig:3-hyperplane-distance}
 \end{figure}
 \begin{proof}
     \begin{enumerate}
@@ -962,7 +963,7 @@ Mercer’s Theorem provides the precise answer to this problem.
             \begin{equation}
                 K(x, z) = x^\top z;
             \end{equation}
-            \item \textbf{Polynomial kernel}: maps $\mathbb{R}^n \to \mathbb{R}^{\scriptsize\begin{pmatrix}n+p\\p\end{pmatrix}}$,
+            \item \textbf{Polynomial kernel}: can be understood as mapping $\mathbb{R}^n$ into a feature space of dimension $\binom{n+p}{p}$,
             \begin{equation}
                 K(x, z) = (x^\top z + 1)^p;
             \end{equation}
