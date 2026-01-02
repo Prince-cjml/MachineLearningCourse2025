@@ -339,7 +339,7 @@ $$
 $$
 \begin{aligned}
 \mathrm{ELBO} &= \log p_{\theta}(x_0) - \mathrm{KL} \\
-&= \int_{x_{1:T}}q(x_{1:T}\mid x_0) \log p_{\theta}(x_0) \mathrm{d}x_{1:T} - \int_{x_{1:T}} q(x_{1:T}\mid x_0) \frac{q(x_{1:T}\mid x_0)}{p_{\theta}(x_{1:T}\mid x_0)} \mathrm{d} x_{1:T}\\
+&= \int_{x_{1:T}}q(x_{1:T}\mid x_0) \log p_{\theta}(x_0) \mathrm{d}x_{1:T} - \int_{x_{1:T}} q(x_{1:T}\mid x_0) \log \frac{q(x_{1:T}\mid x_0)}{p_{\theta}(x_{1:T}\mid x_0)} \mathrm{d} x_{1:T}\\
 &= \int_{x_{1:T}} q(x_{1:T}\mid x_0) \log \frac{p_{\theta}(x_{0:T})}{q(x_{1:T}\mid x_0)}\mathrm{d} x_{1:T}\\
 &= \int_{x_{1:T}} q(x_{1:T}\mid x_0) \log \frac{p(x_T) \prod_{t \in [T]} p_{\theta}(x_{t-1}\mid x_t) }{\prod_{t \in [T]} q(x_t\mid x_{t-1}) }\mathrm{d} x_{1:T}\\
 &= \mathbb{E}_{x_{1:T} \sim  q(x_{1:T}\mid x_0)}\left[ \log p(x_T) + \sum_{t \in [T]}\log  \frac{p_{\theta}(x_{t-1}\mid x_t)}{q(x_t\mid x_{t-1})} \right] 
@@ -449,7 +449,7 @@ $$
 然后把 $q(x_{t-1},x_t\mid x_0)$ 拆成 $q(x_{t-1}\mid x_t,x_0)\cdot q(x_t\mid x_0)$，并将对 $x_t$ 的积分拿到最外面：
 
 $$
-\int_{x_t} q(x_t\mid x_0)\int_{x_{t-1}} q(x_{t-1}\mid x_t,x_0) \log \frac{q(x_{t-1}\mid x_t,x_0)}{p_{\theta}(x_{t-1},x_t)}\mathrm{d}x_{t-1}\mathrm{d}x_t
+\int_{x_t} q(x_t\mid x_0)\int_{x_{t-1}} q(x_{t-1}\mid x_t,x_0) \log \frac{q(x_{t-1}\mid x_t,x_0)}{p_{\theta}(x_{t-1} \mid x_t)}\mathrm{d}x_{t-1}\mathrm{d}x_t
 $$
 
 KL 散度的形式这就出来了！
