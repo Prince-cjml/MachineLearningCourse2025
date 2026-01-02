@@ -395,7 +395,7 @@ In the diagonal case $\Sigma=\mathrm{diag}(\sigma_1^2,\dots,\sigma_d^2)$, this b
     Therefore, VAE training typically uses:
     \begin{itemize}
         \item a decoder network $f_\theta$ for $p_\theta(x\mid z)$;
-        \item an encoder network producing two ``heads'': $\mu_\phi(x)$ and
+        \item an encoder network producing two output heads: $\mu_\phi(x)$ and
         $\log \sigma_\phi^2(x)$;
         \item one (or a few) Monte Carlo samples per datapoint for the
         reconstruction expectation.

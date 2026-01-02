@@ -1,0 +1,368 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\chapter{Diffusion Model}
+\begin{introduction}
+    \item Diffusion as iterative generation
+    \item Markov forward noising process
+    \item Reverse denoising model
+    \item DDPM
+\end{introduction}
+Unlike VAE-style \emph{one-shot} generation (sample a low-dimensional latent $z\sim\mathcal N(0,I)$ and decode once),
+diffusion models generate a sample through \emph{many} small steps.
+Typically we choose a large horizon $T$ (e.g.\ $T=1000$) and start from a pure Gaussian noise $x_T\sim\mathcal N(0,I)$,
+then gradually denoise:
+\[
+    x_T \to x_{T-1} \to \cdots \to x_1 \to x_0.
+\]
+Here $x_0$ lives in the \emph{same} space as the data (e.g.\ an image vector in $\mathbb R^d$), and intermediate states are hidden.
+
+\begin{center}
+    \includegraphics{../../tikz/11/1.pdf}
+\end{center}
+
+\begin{remark}[Forward vs.\ reverse time]
+In diffusion literature, the \emph{forward} process means \emph{noising} $x_0\mapsto x_T$,
+while the \emph{reverse} process means \emph{denoising} $x_T\mapsto x_0$.
+The reverse process is the actual \emph{generation} procedure.
+\end{remark}
+
+\section{Graphical Model and Latent Variables}
+We consider a Markov chain with random variables
+\[
+    x_0, x_1, \dots, x_T\in\mathbb R^d,
+\]
+where $x_0$ is observed (training data) and all $x_1,\dots,x_T$ are latent.
+The conditional-independence structure is a simple chain.
+
+\begin{center}
+    \includegraphics{../../tikz/11/2.pdf}
+\end{center}
+
+\begin{note}
+This is another latent-variable maximum-likelihood problem (similar in spirit to VAE), but with \emph{many} latent variables.
+Directly computing $p_\theta(x_0)$ requires marginalizing all $x_{1:T}$ and is intractable.
+\end{note}
+
+\section{Model: Reverse (Generative) Process \texorpdfstring{$p_\theta$}{pθ}}
+We model the reverse denoising chain as
+\begin{equation}
+    p_\theta(x_{0:T})
+    = p(x_T)\prod_{t=1}^{T} p_\theta(x_{t-1}\mid x_t),
+\end{equation}
+with the \textbf{prior}
+\begin{equation}
+    p(x_T)=\mathcal N(0,I).
+\end{equation}
+For continuous-valued variables, we typically parameterize each reverse transition as Gaussian:
+\begin{equation}
+    p_\theta(x_{t-1}\mid x_t)
+    = \mathcal N\!\bigl(\mu_\theta(x_t,t),\, \Sigma_\theta(x_t,t)\bigr).
+\end{equation}
+In practice, both $\mu_\theta$ and $\Sigma_\theta$ are produced by neural networks that take $x_t$ as input;
+it is also common to explicitly feed the time index $t$ (or a time embedding) so that the network can distinguish
+different denoising steps.
+
+\section{Variational Inference: ELBO for Diffusion}
+We want to maximize the data log-likelihood:
+\begin{equation}
+    \max_\theta\ \log p_\theta(x_0),
+\end{equation}
+which is intractable due to latent-variable marginalization.
+Introduce a variational distribution
+\begin{equation}
+    q(x_{1:T}\mid x_0),
+\end{equation}
+to approximate the true posterior $p_\theta(x_{1:T}\mid x_0)$.
+By the standard variational identity,
+\begin{equation}
+    \log p_\theta(x_0)
+    = \mathcal L_{\mathrm{ELBO}}(x_0;\theta)
+      + \mathrm{KL}\!\left(q(x_{1:T}\mid x_0)\,\|\,p_\theta(x_{1:T}\mid x_0)\right),
+\end{equation}
+where the evidence lower bound (ELBO) is
+\begin{equation}
+    \mathcal L_{\mathrm{ELBO}}(x_0;\theta)
+    := \mathbb E_{q(x_{1:T}\mid x_0)}\!\left[
+        \log \frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)}
+    \right].
+\end{equation}
+Maximizing ELBO is equivalent to maximizing $\log p_\theta(x_0)$ when the variational posterior matches the true posterior.
+
+\section{Forward (Noising) Process \texorpdfstring{$q$}{q} and Noise Schedule}
+In DDPM, the variational distribution $q$ is chosen as a \textbf{fixed} Markov noising process:
+\begin{equation}
+    q(x_{1:T}\mid x_0) = \prod_{t=1}^{T} q(x_t\mid x_{t-1}),
+\end{equation}
+with
+\begin{equation}\label{eq:ddpm-forward}
+    q(x_t\mid x_{t-1})
+    = \mathcal N\!\left(\sqrt{\alpha_t}\,x_{t-1},\ (1-\alpha_t)I\right),
+    \qquad \alpha_t\in(0,1).
+\end{equation}
+The sequence $\{\alpha_t\}$ is a \textbf{noise schedule} (hyperparameters); typically $\alpha_t$ gradually decreases
+so that later steps inject more noise.
+
+\begin{remark}[Key DDPM design: $q$ has no trainable parameters]
+Unlike the VAE encoder $q_\phi(z\mid x)$, the forward chain \eqref{eq:ddpm-forward} is \emph{pre-specified} and contains no learnable parameters.
+This guarantees that, with a suitable schedule, $x_T$ becomes (approximately) standard Gaussian without needing an explicit KL regularizer.
+\end{remark}
+
+\subsection{Closed-form marginal \texorpdfstring{$q(x_t\mid x_0)$}{q(xt|x0)}}
+Define
+\begin{equation}
+    \bar \alpha_t := \prod_{s=1}^{t} \alpha_s,\qquad \bar\alpha_0:=1.
+\end{equation}
+Then one can show by recursion (using Gaussian reparameterization and Gaussian-additivity) that
+\begin{equation}\label{eq:ddpm-qxt-x0}
+    q(x_t\mid x_0)
+    = \mathcal N\!\left(\sqrt{\bar\alpha_t}\,x_0,\ (1-\bar\alpha_t)I\right),
+\end{equation}
+equivalently,
+\begin{equation}\label{eq:ddpm-reparam}
+    x_t
+    = \sqrt{\bar\alpha_t}\,x_0
+      + \sqrt{1-\bar\alpha_t}\,\varepsilon,
+    \qquad \varepsilon\sim\mathcal N(0,I).
+\end{equation}
+
+\begin{remark}[One-step access to any time $t$]
+Equation \eqref{eq:ddpm-reparam} implies we can sample $x_t$ from $x_0$ in \emph{one} shot without simulating the entire chain.
+This is crucial for efficient training.
+\end{remark}
+
+\subsection{Why \texorpdfstring{$x_T\sim\mathcal N(0,I)$}{xT~N(0,I)} happens}
+From \eqref{eq:ddpm-qxt-x0}, if $\bar\alpha_T\approx 0$ (achieved by large $T$ and a decreasing schedule),
+then
+\[
+    q(x_T\mid x_0)\approx \mathcal N(0,I),
+\]
+so the end state is close to an isotropic Gaussian noise, matching the reverse-process prior $p(x_T)$.
+
+\section{A Tractable Posterior: \texorpdfstring{$q(x_{t-1}\mid x_t,x_0)$}{q(xt-1|xt,x0)}}
+The ELBO contains terms involving both $q$ and $p_\theta$.
+A key trick is to work with the \emph{forward posterior conditioned on $x_0$}:
+\begin{equation}
+    q(x_{t-1}\mid x_t,x_0).
+\end{equation}
+Although $q(x_{t-1}\mid x_t)$ is generally intractable, conditioning on $x_0$ makes it tractable because
+all relevant terms admit closed forms: $q(x_t\mid x_{t-1})$, $q(x_{t-1}\mid x_0)$, and $q(x_t\mid x_0)$.
+By Bayes' rule,
+\begin{equation}\label{eq:ddpm-bayes}
+    q(x_{t-1}\mid x_t,x_0)
+    \propto q(x_t\mid x_{t-1})\,q(x_{t-1}\mid x_0),
+    \quad\text{with normalization by }q(x_t\mid x_0).
+\end{equation}
+
+\begin{theorem}[DDPM posterior is Gaussian]\label{thm:ddpm-posterior}
+Under the Gaussian forward process \eqref{eq:ddpm-forward}, the conditional distribution
+\(
+    q(x_{t-1}\mid x_t,x_0)
+\)
+is Gaussian:
+\begin{equation}
+    q(x_{t-1}\mid x_t,x_0)
+    = \mathcal N\!\bigl(\tilde\mu_t(x_t,x_0),\,\tilde\beta_t I\bigr),
+\end{equation}
+where writing $\beta_t:=1-\alpha_t$ and $\bar\alpha_t=\prod_{s=1}^t\alpha_s$,
+\begin{equation}\label{eq:ddpm-posterior-var}
+    \tilde\beta_t
+    := \frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\,\beta_t,
+\end{equation}
+and the posterior mean can be expressed as
+\begin{equation}\label{eq:ddpm-posterior-mean-x0}
+    \tilde\mu_t(x_t,x_0)
+    :=
+    \frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar\alpha_t}\,x_0
+    + \frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,x_t.
+\end{equation}
+\end{theorem}
+
+\begin{remark}[Alternative (more useful) mean form: in terms of noise]
+Using \eqref{eq:ddpm-reparam} (for a fixed $t$), one may rewrite $x_0$ as
+\begin{equation}
+    x_0=\frac{x_t-\sqrt{1-\bar\alpha_t}\,\varepsilon}{\sqrt{\bar\alpha_t}},
+\end{equation}
+and substitute into \eqref{eq:ddpm-posterior-mean-x0} to obtain the simplified expression
+\begin{equation}\label{eq:ddpm-posterior-mean-eps}
+    \tilde\mu_t(x_t,\varepsilon)
+    =
+    \frac{1}{\sqrt{\alpha_t}}
+    \left(
+        x_t - \frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\,\varepsilon
+    \right),
+\end{equation}
+which reveals the intuition: to go from $x_t$ to the mean of $x_{t-1}$, we ``subtract the injected noise direction''
+with a precise coefficient determined by the schedule.
+\end{remark}
+
+\section{ELBO Decomposition into KL Terms}
+Expand the ELBO using the Markov factorizations of $p_\theta$ and $q$:
+\begin{equation}
+    \mathcal L_{\mathrm{ELBO}}(x_0;\theta)
+    = \mathbb E_{q(x_{1:T}\mid x_0)}\!\left[
+        \log p(x_T)
+        + \sum_{t=1}^{T}\log p_\theta(x_{t-1}\mid x_t)
+        - \sum_{t=1}^{T}\log q(x_t\mid x_{t-1})
+    \right].
+\end{equation}
+Rearranging yields a standard DDPM form:
+\begin{equation}\label{eq:ddpm-elbo-kl}
+    \mathcal L_{\mathrm{ELBO}}(x_0;\theta)
+    =
+    -\mathrm{KL}\!\left(q(x_T\mid x_0)\,\|\,p(x_T)\right)
+    + \mathbb E_q\!\left[\log p_\theta(x_0\mid x_1)\right]
+    - \sum_{t=2}^{T}\mathbb E_q\!\left[
+        \mathrm{KL}\!\left(q(x_{t-1}\mid x_t,x_0)\,\|\,p_\theta(x_{t-1}\mid x_t)\right)
+    \right].
+\end{equation}
+
+\begin{remark}[What is optimized in practice?]
+\begin{itemize}
+    \item The prior KL term is usually treated as a constant (it contains no learnable parameters).
+    \item The $t=1$ reconstruction term $\mathbb E_q[\log p_\theta(x_0\mid x_1)]$ is sometimes ignored or folded into the $t=1$ case.
+    \item The main training signal comes from the sum of KL terms for $t=2,\dots,T$.
+\end{itemize}
+\end{remark}
+
+\section{Noise-Prediction Parameterization and the Simple Loss}
+\subsection{Predicting noise instead of the mean}
+We choose $p_\theta(x_{t-1}\mid x_t)$ as Gaussian and parameterize its mean to mirror \eqref{eq:ddpm-posterior-mean-eps}:
+\begin{equation}\label{eq:ddpm-ptheta-mean-eps}
+    \mu_\theta(x_t,t)
+    :=
+    \frac{1}{\sqrt{\alpha_t}}
+    \left(
+        x_t - \frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\,\varepsilon_\theta(x_t,t)
+    \right),
+\end{equation}
+where $\varepsilon_\theta(x_t,t)$ is a neural network (typically U-Net) that predicts the injected noise.
+For the variance, a common simplification is to fix
+\begin{equation}
+    \Sigma_\theta(x_t,t) = \sigma_t^2 I,
+\end{equation}
+with $\sigma_t$ set by a schedule (often related to $\beta_t=1-\alpha_t$), rather than learned.
+
+\begin{remark}[Why not learn the variance?]
+Learning variances introduces log-determinants and matrix inverses in the Gaussian KL closed form, making optimization harder.
+Empirically, matching the \emph{mean} (or equivalently the denoising direction) is most important.
+\end{remark}
+
+\subsection{From KL to a weighted MSE on noise}
+Because both $q(x_{t-1}\mid x_t,x_0)$ and $p_\theta(x_{t-1}\mid x_t)$ are Gaussians, each KL term in \eqref{eq:ddpm-elbo-kl} has a closed form.
+Under the parameterization \eqref{eq:ddpm-ptheta-mean-eps} and fixed variances, the optimization reduces (up to a time-dependent weight) to matching noises:
+\begin{equation}\label{eq:ddpm-simple-loss}
+    \mathcal L_{\mathrm{simple}}(\theta)
+    :=
+    \mathbb E_{x_0\sim p_{\mathrm{data}}}
+    \mathbb E_{t\sim\mathrm{Unif}(\{1,\dots,T\})}
+    \mathbb E_{\varepsilon\sim\mathcal N(0,I)}
+    \left[
+        \left\|
+            \varepsilon
+            - \varepsilon_\theta\!\left(
+                \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon,\ t
+            \right)
+        \right\|_2^2
+    \right].
+\end{equation}
+The original derivation yields a per-step scaling weight; many implementations drop the weight and still obtain strong performance.
+
+\section{Training Algorithm (DDPM)}
+\begin{algorithm}[H]
+\caption{DDPM training (noise prediction)}
+\begin{algorithmic}[1]
+\Require dataset $\{x_0\}$, noise schedule $\{\alpha_t\}_{t=1}^T$, model $\varepsilon_\theta(\cdot,\cdot)$
+\Repeat
+    \State Sample a data point $x_0\sim p_{\mathrm{data}}$
+    \State Sample a timestep $t\sim\mathrm{Unif}(\{1,\dots,T\})$
+    \State Sample noise $\varepsilon\sim\mathcal N(0,I)$
+    \State Form $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon$
+    \State Take a gradient step on $\left\|\varepsilon - \varepsilon_\theta(x_t,t)\right\|_2^2$
+\Until{converged}
+\end{algorithmic}
+\end{algorithm}
+
+\section{Sampling Algorithm (Reverse Denoising)}
+To generate a sample, initialize $x_T\sim\mathcal N(0,I)$ and iterate backward:
+\begin{equation}\label{eq:ddpm-sampling-step}
+    x_{t-1}
+    =
+    \mu_\theta(x_t,t) + \sigma_t z,
+    \qquad
+    z\sim\mathcal N(0,I),
+\end{equation}
+for $t=T,T-1,\dots,1$, with the convention $z=0$ at $t=1$ (do not re-inject noise at the last step).
+Substitute \eqref{eq:ddpm-ptheta-mean-eps} for $\mu_\theta$ to obtain the commonly used update:
+\begin{equation}
+    x_{t-1}
+    =
+    \frac{1}{\sqrt{\alpha_t}}
+    \left(
+        x_t - \frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\,\varepsilon_\theta(x_t,t)
+    \right)
+    + \sigma_t z.
+\end{equation}
+
+\begin{remark}[The ``hard part'' is the coefficients]
+Even though training ultimately matches noise, the reverse update uses precise coefficients derived from the probabilistic model.
+These coefficients are what the ELBO derivation guarantees.
+\end{remark}
+
+\section{Network Architecture: U-Net, DiT}
+The noise network $\varepsilon_\theta(x_t,t)$ maps an input tensor to an output tensor of the \emph{same shape},
+which naturally matches U-Net (encoder--decoder with skip connections):
+
+\begin{center}
+    \includegraphics{../../tikz/11/3.pdf}
+\end{center}
+
+\begin{remark}[DiT]
+Recent diffusion systems also use transformer backbones (Diffusion Transformer, DiT) as the denoiser.
+The probabilistic formulation remains similar; the main difference is the architecture used to represent $\varepsilon_\theta$.
+\end{remark}
+
+\section{Extensions}
+\subsection{Latent Diffusion}
+DDPM operates in pixel space, which can be costly for high-resolution images.
+Latent diffusion uses a pretrained autoencoder (e.g.\ a VAE):
+\begin{itemize}
+    \item Encode $x$ to a latent $z=\mathrm{Enc}(x)$.
+    \item Run diffusion in latent space to model $p(z)$ or $p(z\mid y)$.
+    \item Decode $\hat x=\mathrm{Dec}(z_0)$ back to pixel space.
+\end{itemize}
+This reduces the dimensionality of the denoiser input/output and accelerates training and sampling.
+
+\subsection{Conditional generation}
+To control what is generated (e.g.\ ``cat'' vs.\ ``dog''), one trains a conditional model $p_\theta(x\mid y)$
+by providing paired data $(x_0,y)$ and feeding $y$ (or a text prompt embedding) into the denoiser.
+Practical systems often use techniques such as classifier-free guidance.
+
+\subsection{Flow matching / rectified flow (high-level)}
+Diffusion can be viewed as learning a trajectory from noise to data.
+Flow matching methods aim to learn a simpler transport, often a straight-line path, by predicting a velocity field.
+At a high level, sample an interpolation point between noise $g$ and data $x$ and learn to predict the direction (velocity) pointing from $g$ to $x$.
+
+\begin{center}
+    \includegraphics{../../tikz/11/4.pdf}
+\end{center}
+
+\begin{remark}
+ The lecture notes emphasized that many recent state-of-the-art generative models are now based on flow matching / rectified flow formulations.
+\end{remark}
+
+\section{Administrative Notes and Q\&A (from class)}
+\begin{remark}[Noise schedule]
+The schedule $\{\alpha_t\}$ is chosen empirically; it should decrease with $t$ so that $\bar\alpha_T$ approaches $0$ within a finite horizon (e.g.\ $T=1000$),
+making $x_T$ close to $\mathcal N(0,I)$.
+\end{remark}
+
+\begin{remark}[Why conditioning on $x_0$ helps in the posterior]
+Without knowing $x_0$, many different $x_{t-1}$ could have produced a given $x_t$ under forward noising.
+Conditioning on $x_0$ restricts the chain to a specific trajectory, making $q(x_{t-1}\mid x_t,x_0)$ analytically tractable.
+\end{remark}
+
+\begin{remark}[Final exam notice]
+The final exam was announced for \textbf{Jan.\ 7, 2--4pm} in the same classroom, with question style similar to homework (approximately 6--8 problems, difficulty TBD).
+\end{remark}
+
+\end{document}
