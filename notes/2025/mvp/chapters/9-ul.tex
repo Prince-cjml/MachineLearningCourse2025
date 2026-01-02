@@ -568,7 +568,6 @@ instead of forcing each point into exactly one cluster,
 it allows fractional responsibilities and models not only the center but also the spread and orientation of each cluster.
 \end{note}
 \section{Latent Variable Models and the EM Algorithm}
-\subsection{Latent-variable MLE and why it is hard}
 MoG is a \emph{latent-variable} model: for each datapoint $x_i$ there is an
 unobserved cluster indicator.  We will use the lighter integer notation
 \begin{equation}
@@ -598,7 +597,6 @@ where $\theta=\{\pi_k,\mu_k,\Sigma_k\}_{k=1}^K$.
     making naive unconstrained gradient descent non-trivial.
 \end{remark}
 
-\subsection{KL divergence and ELBO (evidence lower bound)}
 To derive EM in a general and reusable way, we introduce KL divergence.
 \begin{definition}[Kullback--Leibler divergence]
     For distributions $Q,P$ on the same variable $Z$,
@@ -629,11 +627,10 @@ To derive EM in a general and reusable way, we introduce KL divergence.
 \end{theorem}
 
 \begin{remark}
-    ELBO is commonly read as ``elbow'' in talks.
+    ELBO is commonly read as elbow in talks.
     The bound is tight when $q(z)=p(z\mid x;\theta)$.
 \end{remark}
 
-\subsection{The EM algorithm (Expectation--Maximization)}
 EM alternates between optimizing the variational distribution $q$ and the model
 parameters $\theta$.
 
@@ -664,7 +661,34 @@ log-likelihood
     necessarily the global optimum).
 \end{remark}
 
-\subsection{EM for MoG: responsibilities and closed-form updates}
+\begin{proposition}[Monotonic improvement]
+    Each EM iteration does not decrease the data log-likelihood:
+    \[
+        \log p(x;\theta^{(t+1)}) \ge \log p(x;\theta^{(t)}).
+    \]
+\end{proposition}
+\begin{proof}
+    In the E-step, we choose $q^{(t+1)}(z)=p(z\mid x;\theta^{(t)})$, hence the KL
+    gap in \eqref{eq:ul-elbo} becomes $0$ at $\theta^{(t)}$ and
+    \[
+        \mathcal L(q^{(t+1)},\theta^{(t)})=\log p(x;\theta^{(t)}).
+    \]
+    In the M-step, we maximize ELBO in $\theta$, so
+    \[
+        \mathcal L(q^{(t+1)},\theta^{(t+1)})
+        \ge
+        \mathcal L(q^{(t+1)},\theta^{(t)})
+        =
+        \log p(x;\theta^{(t)}).
+    \]
+    Since ELBO is always a lower bound on $\log p(x;\theta)$, we have
+    \[
+        \log p(x;\theta^{(t+1)}) \ge \mathcal L(q^{(t+1)},\theta^{(t+1)}),
+    \]
+    which together proves the claim.
+\end{proof}
+
+
 For MoG, the complete-data likelihood for one datapoint is
 \begin{equation}
     p(x_i,G_i=k;\theta)
@@ -694,4 +718,22 @@ closed-form updates:
     When responsibilities collapse to hard assignments, MoG-EM reduces to the
     familiar K-means updates.
 \end{remark}
+
+Assume an isotropic shared covariance $\Sigma_k=\sigma^2 I$ for all $k$. Then
+\begin{equation}
+    \gamma_{ik}
+    \propto
+    \pi_k \exp\!\left(-\frac{\|x_i-\mu_k\|^2}{2\sigma^2}\right).
+\end{equation}
+As $\sigma\to 0$, the soft assignment concentrates on the closest mean:
+\begin{equation}
+    \gamma_{ik}
+    \to
+    \begin{cases}
+        1, & k=\argmin_j \|x_i-\mu_j\|^2,\\
+        0, & \text{otherwise}.
+    \end{cases}
+\end{equation}
+This recovers the hard assignment step of K-means, and with these hard
+assignments the M-step mean update reduces to the K-means centroid update.
 \end{document}

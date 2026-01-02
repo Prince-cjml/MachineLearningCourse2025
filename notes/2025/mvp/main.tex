@@ -3,6 +3,7 @@
 \usepackage{wrapfig}
 \usepackage{amssymb}
 \usepackage{pifont}
+\usepackage{pdfpages}
 \title{Machine Learning}
 
 \author{Shaoheng Yan (\href{https://www.photonyan.fun/about}{PhotonYan})}
@@ -47,8 +48,8 @@
 \islocal=0
 
 \begin{document}
-
-\maketitle
+\includepdf{cover2.pdf}
+% \maketitle
 \frontmatter
 
 \tableofcontents
@@ -68,5 +69,7 @@
 \subfile{chapters/7-gp.tex}
 \subfile{chapters/8-tel.tex}
 \subfile{chapters/9-ul.tex}
+\subfile{chapters/10-vae.tex}
+% \subfile{chapters/11-dif.tex}
 % \subfile{chapters/9-em-mog.tex}
 \end{document}
