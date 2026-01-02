@@ -1025,7 +1025,7 @@ few hyperparameters.  Common choices include:
     features).
 \end{itemize}
 
-\begin{remark}[Out-of-Bag Evaluation]
+\begin{remark}
     In each bootstrap sample $D^{(m)}$, roughly a fraction $1-1/e\approx 0.63$
     of the original training points are included, and the remaining points are
     left out.  For any training example, we can average the predictions of all
@@ -1042,7 +1042,7 @@ learners, boosting builds an ensemble \emph{sequentially}.  Each new learner
 tries to correct the mistakes of the current ensemble, effectively turning a
 collection of weak learners into a strong one.
 
-\begin{definition}[Boosting (High-Level View)]
+\begin{definition}[Boosting]
     Given a training set $D = \{(x_i,y_i)\}_{i=1}^n$, boosting maintains an
     ensemble predictor
     \begin{equation}
@@ -1062,7 +1062,7 @@ distribution of weights over training samples, gives higher weights to
 misclassified points, and fits a new weak learner to this reweighted dataset at
 each iteration.
 
-\begin{remark}[Boosting vs.\ Bagging]
+\begin{remark}
     \begin{itemize}
         \item Bagging trains base learners \emph{in parallel} on resampled
         datasets and primarily reduces variance.
