@@ -153,7 +153,7 @@ Unsupervised learning can be divided into several tasks:
 
     After obtaining the first principal component $u_1$, the second principal component $u_2$ is defined as the direction that maximizes the projected variance subject to two constraints:
 \begin{equation}
-    \max_{u_2}\; u_2^\top \Sigma u_2
+    \argmax_{u_2}\; u_2^\top \Sigma u_2
 \end{equation}
 subject to
 \begin{equation}
@@ -340,8 +340,8 @@ and finds an embedding that makes these two distributions as close as possible.
 For datapoints $x_i, x_j$ in the original space, define a conditional probability
 \begin{equation}
     p_{j|i}
-    = \frac{\exp\!\left(-\|x_i - x_j\|^2 / 2\sigma_i^2\right)}
-            {\sum_{k \neq i} \exp\!\left(-\|x_i - x_k\|^2 / 2\sigma_i^2\right)}.
+    = \frac{\exp\left(-\|x_i - x_j\|^2 / 2\sigma_i^2\right)}
+            {\sum_{k \neq i} \exp\left(-\|x_i - x_k\|^2 / 2\sigma_i^2\right)}.
 \end{equation}
 The bandwidth $\sigma_i$ is chosen such that the \emph{perplexity}
 of the distribution matches a user-specified value.
@@ -723,7 +723,7 @@ Assume an isotropic shared covariance $\Sigma_k=\sigma^2 I$ for all $k$. Then
 \begin{equation}
     \gamma_{ik}
     \propto
-    \pi_k \exp\!\left(-\frac{\|x_i-\mu_k\|^2}{2\sigma^2}\right).
+    \pi_k \exp\left(-\frac{\|x_i-\mu_k\|^2}{2\sigma^2}\right).
 \end{equation}
 As $\sigma\to 0$, the soft assignment concentrates on the closest mean:
 \begin{equation}

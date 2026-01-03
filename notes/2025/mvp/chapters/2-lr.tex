@@ -314,9 +314,9 @@ Equation~\eqref{2.24} recovers ERM with the squared-loss objective.
     P(\hat w \mid y,x) 
     &= \frac{1}{Z}
        \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)^n
-       \exp\!\left(-\frac{1}{2\sigma^2}\sum_{i\in[n]} \big(y_i-\hat w^\top \hat x_i\big)^2\right) 
+       \exp\left(-\frac{1}{2\sigma^2}\sum_{i\in[n]} \big(y_i-\hat w^\top \hat x_i\big)^2\right) 
        \left(\frac{1}{\sqrt{2\pi\sigma_w^2}}\right)^{d+1}
-       \exp\!\left(-\frac{\hat w^\top \hat w}{2\sigma_w^2}\right)
+       \exp\left(-\frac{\hat w^\top \hat w}{2\sigma_w^2}\right)
   \end{align*}
   
   Taking the negative logarithm of the posterior, note that only the terms involving $\hat w$ are subject to optimization:
