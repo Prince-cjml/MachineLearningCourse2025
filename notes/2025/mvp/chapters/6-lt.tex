@@ -1,0 +1,630 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\chapter{Learning Theory}
+\begin{introduction}
+    \item In-Sample Error
+    \item Out-of-Sample Error
+    \item Generalization Error
+    \item PAC
+    \item Shelah's Lemma
+    \item VC-Dim
+\end{introduction}
+\section{Learning Theory}
+Learning theory forms the foundation of machine learning. It explains why a model can generalize to data that did not appear during training. We may draw an analogy here:
+\begin{itemize}
+\item Training a model $\to$ Taking a course;
+\item Training process $\to$ Doing exercises or homework;
+\item Testing phase $\to$ Taking an exam.
+\end{itemize}
+From our own learning experience, we know that students who perform well during practice do not always achieve high scores in exams. Likewise, a model that fits the training data well may still perform poorly on unseen data. This motivates us to introduce theoretical concepts that can quantitatively describe and explain such phenomena.
+
+\begin{definition}[In-sample Error]
+    The \emph{in-sample error} $E_{\rm in}$ is defined as the empirical error rate of a hypothesis evaluated on the training dataset.
+    \end{definition}
+    
+    Let $h \in \mathcal{H}$ denote a hypothesis or model, for example a linear classifier $h(x) := \mathrm{sign}(w^\top x + b)$.  
+    Then the in-sample error can be formally written as
+    \begin{equation}
+        E_{\rm in} = \frac{1}{n}\sum_{i \in [n]} \mathbb{1}\!\big(h(x_i) \neq y_i\big),
+        \qquad D := \{(x_i, y_i)\,|\, i \in [n]\}.
+    \end{equation}
+Here $D$ denotes the training dataset, and each $y_i \in \{-1,1\}$ is the ground-truth label prepared for the classification task.
+
+Oppositely, we also wish to evaluate the model's ability to perform well on unseen or more general tasks.  
+This motivates the definition of a new concept:
+
+\begin{definition}[Out-of-sample Error]
+The \emph{out-of-sample error} $E_{\rm out}$ measures how well a model generalizes beyond the training data.
+\end{definition}
+
+In the previous example, $E_{\rm out}$ can be expressed as
+\begin{equation}
+    E_{\rm out} = \mathbb{P}\big(h(x) \neq y\big)
+    = \mathbb{E}_{(x,y)\sim p_{xy}}\!\left[\mathbb{1}\big(h(x) \neq y\big)\right],
+\end{equation}
+where $(x,y) \sim p_{xy}$ are i.i.d. samples drawn from the true underlying data distribution.
+
+To quantitatively capture the generalization ability of a model, we define the following notion:
+
+\begin{definition}[Generalization Error]
+The \emph{generalization error} is defined as the difference between the out-of-sample and in-sample errors:
+\begin{equation}
+    E_{\rm out}(h) - E_{\rm in}(h).
+\end{equation}
+\end{definition}
+
+\begin{remark}
+In practice, we often introduce regularization terms to prevent $E_{\rm in}$ from becoming excessively small, which can help improve generalization performance.
+\end{remark}
+
+Our ultimate goal is to bound the quantity $E_{\rm out}(h) - E_{\rm in}(h)$.  
+However, it remains an open question whether such a bound can be feasibly obtained for arbitrary hypotheses.
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.8]{../../tikz/6/1.pdf}
+    \caption{An example where $E_{\rm in}=0$ but $E_{\rm out}$ remains large.}
+\end{figure}
+
+It is crucial to acknowledge that, in essence, no finite dataset can guarantee a definitive prediction of future outcomes.  
+The optimization of a model solely based on minimizing $E_{\rm in}(h)$ does not ensure a small generalization gap $E_{\rm out}(h) - E_{\rm in}(h)$, which may in fact be arbitrarily large.  
+\textbf{However}, according to probabilistic learning theory, we can establish that with high probability $(1 - \delta)$, where $\delta \ll 1$, the generalization error is bounded by a small quantity $\varepsilon(\mathcal{H}, n, \delta)$ depending on the hypothesis space $\mathcal{H}$, the number of samples $n$, and the confidence parameter $\delta$:  
+\begin{equation}
+    \mathbb{P}\!\left(
+        |E_{\rm out}(h) - E_{\rm in}(h)| \le \varepsilon(\mathcal{H}, n, \delta)
+    \right) \ge 1 - \delta.
+\end{equation}
+This forms the cornerstone of statistical learning theory: while perfect certainty is unattainable, we can quantify uncertainty and guarantee performance with high probability.
+
+The theorem above leads to the framework known as the \textbf{Probably Approximately Correct (PAC) Learning Theory}.  
+Before introducing the PAC formulation in detail, we first review several fundamental mathematical tools.
+
+\begin{theorem}[Hoeffding's Inequality]
+Let $X_1, \dots, X_n$ be independent random variables such that each $X_i$ is almost surely bounded, $X_i \in [a_i, b_i]$.  
+Define the empirical mean $\bar{X} = \frac{1}{n}\sum_{i=1}^n X_i$. Then, for any $\varepsilon > 0$, we have
+\begin{equation}
+    \mathbb{P}\!\left(|\bar{X} - \mathbb{E}\bar{X}| \ge \varepsilon\right)
+    \le 2\exp\left(-\frac{2n^2\varepsilon^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).
+\end{equation}
+\end{theorem}
+\begin{proof}
+    Let $S = \sum_{i=1}^n X_i$. We first bound the upper tail $\mathbb{P}(S - \mathbb{E}S \ge t)$; the lower tail is analogous and the two-sided bound follows by union.
+    
+    By Markov's inequality, for any $\lambda > 0$,
+    \begin{equation}
+    \mathbb{P}(S - \mathbb{E}S \ge t)
+    = \mathbb{P}\!\left(e^{\lambda(S - \mathbb{E}S)} \ge e^{\lambda t}\right)
+    \le e^{-\lambda t}\,\mathbb{E}\,e^{\lambda(S - \mathbb{E}S)}.
+    \end{equation}
+    
+    Because $X_1,\dots,X_n$ are independent,
+    \begin{equation}
+    \mathbb{E}\,e^{\lambda(S - \mathbb{E}S)}
+    = \prod_{i=1}^n \mathbb{E}\,e^{\lambda(X_i - \mathbb{E}X_i)}.
+    \end{equation}
+    
+    For each bounded random variable $Y \in [a,b]$ with $\mathbb{E}Y = \mu$, Hoeffding's lemma gives
+    \begin{equation}
+    \mathbb{E}\,e^{\lambda(Y - \mu)} \le \exp\left(\frac{\lambda^2(b - a)^2}{8}\right).
+    \end{equation}
+    
+    Applying this to each $X_i$ yields
+    \begin{equation}
+    \mathbb{E}\,e^{\lambda(S - \mathbb{E}S)}
+    \le \exp\left(\frac{\lambda^2}{8}\sum_{i=1}^n (b_i - a_i)^2\right).
+    \end{equation}
+    
+    Hence,
+    \begin{equation}
+    \mathbb{P}(S - \mathbb{E}S \ge t)
+    \le \exp\left(-\lambda t + \frac{\lambda^2}{8}\sum_{i=1}^n (b_i - a_i)^2\right).
+    \end{equation}
+    
+    Optimizing over $\lambda > 0$, we find
+    \begin{equation}
+    \lambda^\star = \frac{4t}{\sum_{i=1}^n (b_i - a_i)^2},
+    \end{equation}
+    which gives
+    \begin{equation}
+    \mathbb{P}(S - \mathbb{E}S \ge t)
+    \le \exp\left(-\frac{2t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).
+    \end{equation}
+    
+    By symmetry,
+    \begin{equation}
+    \mathbb{P}(S - \mathbb{E}S \le -t)
+    \le \exp\left(-\frac{2t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).
+    \end{equation}
+    
+    Combining both tails gives
+    \begin{equation}
+    \mathbb{P}\!\left(|S - \mathbb{E}S| \ge t\right)
+    \le 2\exp\left(-\frac{2t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).
+    \end{equation}
+    
+    Finally, setting $t = n\varepsilon$ and noting $\bar X = S/n$, we obtain
+    \begin{equation}
+    \mathbb{P}\!\left(|\bar X - \mathbb{E}\bar X| \ge \varepsilon\right)
+    \le 2\exp\left(-\frac{2n^2\varepsilon^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).
+    \end{equation}
+\end{proof}
+Now, for a \textbf{given and fixed} hypothesis $h$, we obtain the following result:
+
+\begin{theorem}[First Bound of PAC Learning]
+For any $\varepsilon > 0$,
+\begin{equation}
+    \mathbb{P}\!\left(E_{\rm out}(h) - E_{\rm in}(h) \ge \varepsilon\right)
+    \le \exp(-2n\varepsilon^2).
+\end{equation}
+\end{theorem}
+
+Here, $E_{\rm in}(h)$ serves as the empirical mean of the random variables  
+$\mathbb{1}\!\big(h(x_i) \neq y_i\big)$, as defined previously.  
+In other words, each indicator $\mathbb{1}\!\big(h(x_i) \neq y_i\big)$ represents a bounded random variable in $[0,1]$,  
+and Hoeffding’s inequality ensures that the deviation between the empirical error $E_{\rm in}(h)$  
+and the expected error $E_{\rm out}(h)$ decreases exponentially with the number of samples $n$.
+\begin{proof}
+    By taking expectation over the definition of $E_{\rm in}$, we have
+    \begin{align*}
+        \mathbb{E}[\bar{X}]
+        &= \frac{1}{n}\sum_{i=1}^n \mathbb{E}[X_i] \\
+        &= \frac{1}{n}\sum_{i=1}^n \mathbb{E}_{(x_i,y_i)\sim p_{xy}}
+           \big[\mathbb{1}(h(x_i)\neq y_i)\big] \\
+        &= \frac{1}{n}\sum_{i=1}^n E_{\rm out}(h)
+        = E_{\rm out}(h).
+    \end{align*}
+    The third equality follows directly from the definition of $E_{\rm out}(h)$.  
+    Applying Hoeffding’s inequality, note that each random variable $\mathbb{1}(h(x_i)\neq y_i)$ is bounded in $\{0,1\}$,  
+    so $(b_i - a_i)^2 = 1$ for all $i$, and the denominator $\sum_{i=1}^n (b_i - a_i)^2 = n$ cancels accordingly.  
+    This completes the proof.
+    \end{proof}
+    
+    However, there is a fundamental limitation in the condition of this first PAC bound:  
+    the hypothesis $h$ must be fixed \emph{before} observing the training data.  
+    In practice, the learning algorithm selects $h$ based on the dataset $D$,  
+    which introduces statistical dependence between $h$ and $D$. (Parameters of model $h$ is determined by the chosen training dataset $D$) 
+    This dependence violates the independence assumption required by Hoeffding’s inequality,  
+    and therefore the bound no longer holds directly once $h$ is data-dependent.
+
+    To overcome this limitation, we turn to analyzing the \textbf{union bound} over the hypothesis space $\mathcal{H}$,  
+    which removes the dependency on a single fixed hypothesis chosen after observing the training data.  
+    We first assume that $\mathcal{H}$ is a finite set, which actually is not always satisfied in practice  
+    (e.g., the space of linear models has infinite cardinality, $|\mathrm{GL}_n| = \infty$).  
+    That is, let $\mathcal{H} = \{h_1, \dots, h_M\}$.  
+    
+    In the worst case, we have
+    \begin{align*}
+        \mathbb{P}\!\left(\exists\, h \in \mathcal{H} : E_{\rm out}(h) - E_{\rm in}(h) \ge \varepsilon \right)
+        &= \mathbb{P}\!\left(\bigcup_{i=1}^M \{E_{\rm out}(h_i) - E_{\rm in}(h_i) \ge \varepsilon\}\right) \\
+        &\!\!\!\!\!\!\!\!\!\underbrace{\le}_{\text{Union Bound}} \sum_{i=1}^M
+           \mathbb{P}\!\left(E_{\rm out}(h_i) - E_{\rm in}(h_i) \ge \varepsilon\right) \\
+        &\le M \cdot \exp(-2n\varepsilon^2).
+    \end{align*}
+    
+    Hence, we obtain the following result:
+    
+    \begin{theorem}[First Practical Bound of PAC Learning]
+    With probability at least $1-\delta$,  
+    \begin{equation}
+        E_{\rm out}(h_i) - E_{\rm in}(h_i)
+        < \sqrt{\frac{1}{2n}\log\frac{M}{\delta}}.
+    \end{equation}
+    \label{theo-6.3}
+    \end{theorem}
+\begin{remark}
+    \begin{equation}
+        \delta:=M\cdot\exp(-2n\varepsilon^2)\quad\Leftrightarrow \quad \varepsilon=\sqrt{\frac{1}{2n}\log\frac{M}{\delta}}
+    \end{equation}
+\end{remark}
+    This result reveals a fundamental trade-off between model complexity and generalization.  
+    As the hypothesis space $\mathcal{H}$ becomes richer, the total number of possible hypotheses $M$ increases.  
+    A larger $M$ expands the logarithmic term $\log\frac{M}{\delta}$, thereby loosening the bound on $E_{\rm out}-E_{\rm in}$.  
+    In other words, even though a highly expressive model may achieve $E_{\rm in}=0$ by perfectly fitting the training data,  
+    its generalization gap can still remain large.  
+    To maintain reliable generalization for such expressive models, one must increase the sample size $n$ accordingly.  
+    This highlights the essential balance between data volume and model capacity in learning theory.
+
+    Now consider an infinite hypothesis space $\mathcal{H}$, for example the reproducing kernel Hilbert space (RKHS)  
+    of linear classifiers $\{h : h(x) = w^\top x + b\}$.  
+    We claim that the bound provided in the theorem above becomes an extreme overestimation in such cases.  
+    Intuitively, the union bound treats all hypotheses as completely distinct,  
+    even if many of them make identical predictions on the dataset.  
+    For example, the following three classifiers $h_1$, $h_2$, and $h_3$ may produce exactly the same classification results,  
+    yet the union bound still counts them as three separate events,
+    thereby inflating the estimated probability by a factor of three.  
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.9]{../../tikz/6/2.pdf}
+
+\end{figure}
+\begin{note}
+    A natural idea is to quotient out an equivalence relation on $\mathcal{H}$ so that its effective measure decreases.
+This leads us to the concept of \emph{dichotomy}, where we seek an isomorphism that maps hypotheses producing identical classification results to the same image, thereby identifying them within a common kernel space.
+By quotienting out the equivalence classes induced by $\ker$, which acts as a normal subgroup,
+we obtain a new structure—still a group (or more appropriately here, a reduced hypothesis space)—
+a space of smaller measure, serving as a kind of \emph{renormalized} hypothesis space.
+\end{note}
+
+Assume a binary classification setting
+\begin{equation}
+    y \in \{-1,+1\}, \qquad x \in \mathcal{X},
+\end{equation}
+with hypothesis space
+\begin{equation}
+    \mathcal{H} = \{h:\mathcal{X}\to\{-1,+1\}\}.
+\end{equation}
+
+Given $n$ samples
+\begin{equation}
+    x_1,x_2,\dots,x_n \in \mathcal{X},
+\end{equation}
+for any $h\in\mathcal{H}$ we obtain an $n$–tuple of labels
+\begin{equation}
+    \bigl(h(x_1),h(x_2),\dots,h(x_n)\bigr) \in \{-1,+1\}^n,
+\end{equation}
+which is called a \emph{dichotomy} of the set $\{x_1,\dots,x_n\}$ induced by $\mathcal{H}$.
+
+The growth function $m_{\mathcal{H}}(n)$ is defined as:
+\begin{definition}[Growth Function]
+    \begin{equation}
+        m_{\mathcal{H}}(n)
+        = \max_{x_1,\dots,x_n \in \mathcal{X}}
+          \Bigl|\bigl\{(h(x_1),\dots,h(x_n)) : h\in\mathcal{H}\bigr\}\Bigr|,
+    \end{equation}
+\end{definition}
+i.e., the maximum number of distinct dichotomies that $\mathcal{H}$ can implement
+on any set of $n$ points. It measures the effective size of the hypothesis space
+$\mathcal{H}$.
+\begin{note}
+    The growth function can be interpreted as a quotient construction.  
+    Define the evaluation map
+    \begin{equation}
+        \Phi_n : \mathcal{H} \to \{-1,+1\}^n, \qquad
+        \Phi_n(h) = (h(x_1), h(x_2), \dots, h(x_n)).
+    \end{equation}
+    This map induces an equivalence relation on $\mathcal{H}$:
+    \begin{equation}
+        h_1 \sim h_2 \quad \Leftrightarrow \quad h_1(x_i) = h_2(x_i), \ \forall i = 1, \dots, n.
+    \end{equation}
+    Each equivalence class corresponds to one unique dichotomy,  
+    so two hypotheses are considered identical if they generate the same labeling  
+    on the given sample set. Therefore, the growth function can be written as
+    \begin{equation}
+        m_{\mathcal{H}}(n) = \bigl|\mathcal{H} / \ker(\Phi_n)\bigr|,
+    \end{equation}
+    representing the number of equivalence classes of $\mathcal{H}$ under this relation.  
+    Intuitively, this quotient construction mods out by the kernel of the evaluation map,  
+    focusing only on the empirically distinguishable behaviors of hypotheses on $n$ samples.
+    \end{note}
+    Since there are at most $2^n$ different $\pm1$ labelings on $n$ points, we always have
+\begin{equation}
+    m_{\mathcal{H}}(n) \le 2^n.
+\end{equation}
+
+Now let $S = \{x_1,\dots,x_n\} \subset \mathcal{X}$ be a finite subset.
+We say that $\mathcal{H}$ \emph{shatters} $S$ if it can realize all possible
+$\pm1$ assignments on $S$, that is,
+\begin{equation}
+    \mathcal{H}(x_1,\dots,x_n) = \{-1,+1\}^n.
+\end{equation}
+Equivalently, for every labeling $(y_1,\dots,y_n) \in \{-1,+1\}^n$
+there exists some $h \in \mathcal{H}$ such that $h(x_i) = y_i$ for all $i=1,\dots,n$.
+\begin{example}
+    Consider three sample points $x_1, x_2, x_3$ and a hypothesis set $\mathcal{H}$
+    that induces the following dichotomies:
+    \begin{equation}
+        \mathcal{H}(x_1,x_2,x_3)
+        = \{ (+1,-1,-1),\; (-1,+1,-1),\; (-1,+1,+1) \}.
+    \end{equation}
+Determine which subsets of $\{x_1, x_2, x_3\}$ can be \emph{shattered} by $\mathcal{H}$.
+\end{example}
+\begin{solution}
+    \begin{itemize}
+        \item For any single point $\{x_i\}$, both $+1$ and $-1$ appear in the projections
+        of $\mathcal{H}(x_1,x_2,x_3)$, so every singleton subset is shattered.
+    
+        \item For pairs of points:
+        \begin{align*}
+            \{x_1, x_2\} &\Rightarrow \{(+1,-1),\, (-1,+1)\} \quad
+            \text{(missing $(+1,+1)$ and $(-1,-1)$) $\Rightarrow$ not shattered;} \\
+            \{x_1, x_3\} &\Rightarrow \{(+1,-1),\, (-1,+1),\, (-1,-1)\} \quad
+            \text{(missing $(+1,+1)$) $\Rightarrow$ not shattered;} \\
+            \{x_2, x_3\} &\Rightarrow \{(-1,-1),\, (+1,-1),\, (+1,+1)\} \quad
+            \text{(all $2^2=4$ combinations not present) $\Rightarrow$ not shattered.}
+        \end{align*}
+    
+        \item For the full set $\{x_1,x_2,x_3\}$, since only $3<2^3=8$ dichotomies are realized,
+        it is clearly not shattered.
+    \end{itemize}
+    
+    Hence, $\mathcal{H}$ can only shatter the \emph{singleton subsets}
+    $\{x_1\}$, $\{x_2\}$, and $\{x_3\}$, but no pair or triple of points.
+\end{solution}
+\begin{example}
+    Let $\mathcal{X} = \mathbb{R}^2$, and consider the hypothesis set of all linear classifiers
+    \begin{equation}
+        \mathcal{H} = \{\, h_{w,b}(x) = \operatorname{sign}(w^\top x + b) \mid w \in \mathbb{R}^2,\, b \in \mathbb{R} \,\}.
+    \end{equation}
+    Determine the value of $m_{\mathcal{H}}(3)$, the maximum number of dichotomies that $\mathcal{H}$
+    can produce on any $3$ points in $\mathbb{R}^2$.
+\end{example}
+\begin{solution}
+    
+
+A separating hyperplane in $\mathbb{R}^2$ is a line of the form $w^\top x + b = 0$.  
+The sign of $w^\top x + b$ assigns each point to one of two half-spaces.
+ 
+For any given labeling $(y_1,y_2,y_3)\in\{-1,+1\}^3$,  
+we can always find some line that places the $+1$ points on one side and the $-1$ points on the other,  
+as long as the three points are not collinear.  
+This is because two points determine a line, and the third point’s label can always be satisfied
+by shifting or rotating that line slightly.
+
+Hence every possible assignment of $\pm1$ labels to the three points is realizable:
+\begin{equation}
+    \mathcal{H}(x_1,x_2,x_3)
+    = \{-1,+1\}^3.
+\end{equation}
+
+Therefore, the growth function value is
+\begin{equation}
+    m_{\mathcal{H}}(3) = 2^3 = 8.
+\end{equation}
+\end{solution}
+\begin{remark}
+    More examples have been presented in class, but I'm not goint to note these in our lecture.
+\end{remark}
+$m_{\mathcal H}(n)$ quantified the ability of a model.
+\section{VC-Dim}
+
+\begin{definition}[Vapnik--Chervonenkis Dimension]
+The \emph{VC dimension} $\mathrm{dvc}(\mathcal{H})$ is the largest integer $n$ such that
+\begin{equation}
+    m_{\mathcal{H}}(n) = 2^n.
+\end{equation}
+\end{definition}
+
+\begin{remark}
+Vapnik is the inventor of the Support Vector Machine (SVM) and one of the founders of
+statistical learning theory.
+\end{remark}
+
+The VC dimension measures the \emph{capacity} or \emph{expressive power} of a hypothesis class.
+Formally, it is the largest integer $n$ such that $\mathcal{H}$ can realize all
+$2^n$ possible dichotomies on some set of $n$ points.
+Equivalently, it quantifies how complex the decision boundaries in $\mathcal{H}$ can be:
+a larger VC dimension means $\mathcal{H}$ can represent more distinct labelings of data,
+i.e.\ greater capacity.
+
+\smallskip
+It turns out that if $\mathrm{dvc}(\mathcal{H})$ is finite,
+then $m_{\mathcal{H}}(n)$ can be bounded in terms of $\mathrm{dvc}(\mathcal{H})$.
+
+\begin{theorem}[(Sauer--)Shelah's Lemma]
+Let $\mathcal{H}$ be a class of binary-valued functions on a domain $\mathcal{X}$.
+Define its growth function as
+\begin{equation}
+    m_{\mathcal{H}}(n)
+    = \max_{\substack{S \subseteq \mathcal{X} \\ |S| = n}}
+      \bigl|\{\, (h(x))_{x \in S} : h \in \mathcal{H} \}\bigr|.
+\end{equation}
+If $\mathrm{dvc}(\mathcal{H}) = d < \infty$, then for all $n \ge 0$,
+\begin{equation}
+    m_{\mathcal{H}}(n)
+    \le \sum_{i=0}^{d} \binom{n}{i}\sim O(n^{d})
+\end{equation}
+\end{theorem}
+\begin{proof}
+    We proceed by induction on $n$. The base case is trivial and we proved that in the next proof for completeness.
+    
+    \textbf{Step 1: Divide the hypothesis class.}
+    Fix $x_1, \dots, x_n \in \mathcal{X}$, and define
+    \begin{align}
+        \mathcal{H}_1(x_1,\dots,x_{n-1})
+        &= \{ (h(x_1), \dots, h(x_{n-1})) \mid h \in \mathcal{H},\, h(x_n)=+1 \}, \\
+        \mathcal{H}_2(x_1,\dots,x_{n-1})
+        &= \{ (h(x_1), \dots, h(x_{n-1})) \mid h \in \mathcal{H},\, h(x_n)=-1 \}.
+    \end{align}
+    Then
+    \begin{equation}
+        \mathcal{H}(x_1,\dots,x_n)
+        = \{ (\mathbf{v}, +1) \mid \mathbf{v} \in \mathcal{H}_1(x_1,\dots,x_{n-1}) \}
+          \cup
+          \{ (\mathbf{v}, -1) \mid \mathbf{v} \in \mathcal{H}_2(x_1,\dots,x_{n-1}) \}.
+    \end{equation}
+    
+    \textbf{Step 2: Counting distinct dichotomies.}
+    If $\mathbf{v}$ belongs to both $\mathcal{H}_1$ and $\mathcal{H}_2$, then $\mathcal{H}$ realizes both labelings $(\mathbf{v}, +1)$ and $(\mathbf{v}, -1)$.  
+    Hence,
+    \begin{equation}
+        |\mathcal{H}(x_1,\dots,x_n)|
+        \le |\mathcal{H}_1(x_1,\dots,x_{n-1})|
+           + |\mathcal{H}_2(x_1,\dots,x_{n-1})|.
+    \end{equation}
+    
+    \textbf{Step 3: Bounding the VC dimension.}
+    If $\mathrm{dvc}(\mathcal{H}) = d$, then $\mathrm{dvc}(\mathcal{H}_1) \le d$ and $\mathrm{dvc}(\mathcal{H}_2) \le d-1$.  
+    Otherwise, if $\mathcal{H}_2$ could shatter a subset of size $d$, then $\mathcal{H}$ could shatter that subset together with $x_n$, contradicting $\mathrm{dvc}(\mathcal{H}) = d$.
+    
+    \textbf{Step 4: Apply the induction hypothesis.}
+    By the inductive assumption,
+    \begin{equation}
+        |\mathcal{H}_1(x_1,\dots,x_{n-1})| \le \sum_{i=0}^{d} \binom{n-1}{i},
+        \qquad
+        |\mathcal{H}_2(x_1,\dots,x_{n-1})| \le \sum_{i=0}^{d-1} \binom{n-1}{i}.
+    \end{equation}
+    Therefore,
+    \begin{align}
+        |\mathcal{H}(x_1,\dots,x_n)|
+        &\le \sum_{i=0}^{d} \binom{n-1}{i}
+           + \sum_{i=0}^{d-1} \binom{n-1}{i} \\
+        &= \sum_{i=0}^{d} \left( \binom{n-1}{i} + \binom{n-1}{i-1} \right)
+           = \sum_{i=0}^{d} \binom{n}{i},
+    \end{align}
+    where the last equality uses Pascal's identity.  
+    Hence the claim holds for all $n$.
+    \end{proof}
+    \begin{tcolorbox}
+        \vspace{0.5em}
+            \color{red!50!black}$\circledast   $\quad\emph{{The following proof is included out of personal interest and is not part of the course material. 
+            Readers who wish to focus solely on the course content may safely skip to the next part.}}
+        \vspace{0.5em}
+    \end{tcolorbox}
+\begin{proof}
+    Here we provide another proof.
+    
+    Fix $n$ and choose $S \subseteq \mathcal{X}$ with $|S|=n$
+    such that $m_{\mathcal{H}}(n)=|\mathcal{H}|_S|$, where
+    \begin{equation}
+        \mathcal{H}|_S
+        := \{\, (h(x))_{x\in S} : h\in\mathcal{H} \}
+    \end{equation}
+    is the set of labelings realized on $S$.
+    We prove by induction on $n$ that
+    \begin{equation}
+        |\mathcal{H}|_S|
+        \le \sum_{i=0}^{d} \binom{n}{i}.
+    \end{equation}
+    
+    \textbf{Base cases.}
+    If $n=0$, then $|\mathcal{H}|_S|=1$ and
+    \begin{equation}
+        \sum_{i=0}^{d} \binom{0}{i} = 1,
+    \end{equation}
+    so the claim holds.
+    If $d=0$, then no single point can be labeled in two different ways,
+    hence $|\mathcal{H}|_S|=1$ for all $n$, while
+    \begin{equation}
+        \sum_{i=0}^{0} \binom{n}{i} = 1,
+    \end{equation}
+    so the bound again holds.
+    
+    \textbf{Inductive step.}
+    Assume the statement true for all pairs $(n',d')$ with $n' < n$
+    and the same $d$. Pick some $x \in S$ and set
+    \begin{equation}
+        S' := S \setminus \{x\}, \qquad |S'| = n-1.
+    \end{equation}
+    For each $h\in\mathcal{H}$, let $h|_{S'}$ be its restriction to $S'$.
+    Define
+    \begin{equation}
+        \mathcal{A}
+        := \{\, h|_{S'} : h\in\mathcal{H} \},
+    \end{equation}
+    \begin{equation}
+        \mathcal{B}
+        := \bigl\{\, h|_{S'} : h\in\mathcal{H},\;
+            \exists\,h' \in \mathcal{H}
+            \text{ with } h'(x)\neq h(x),\ h'|_{S'}=h|_{S'} \bigr\}.
+    \end{equation}
+    Thus, $\mathcal{A}$ is the set of all restrictions on $S'$,
+    and $\mathcal{B}$ collects those restrictions for which
+    $\mathcal{H}$ contains at least two hypotheses that agree on $S'$
+    but disagree on $x$.
+    
+    Every labeling of $S$ comes from choosing a restriction in $\mathcal{A}$,
+    and then choosing the value at $x$.
+    Labelings for which the value at $x$ is \emph{forced} (no alternative
+    hypothesis with the same restriction) contribute at most $|\mathcal{A}|$
+    patterns; labelings for which the value at $x$ can be flipped
+    (i.e.\ restrictions in $\mathcal{B}$) contribute at most $|\mathcal{B}|$
+    additional patterns.
+    Hence
+    \begin{equation}
+        |\mathcal{H}|_S|
+        \le |\mathcal{A}| + |\mathcal{B}|.
+    \end{equation}
+    
+    Note that $|\mathcal{A}| \le m_{\mathcal{H}}(n-1)$, because $\mathcal{A}$
+    is a set of labelings on $S'$ of size $n-1$.
+    To bound $|\mathcal{B}|$, define a new hypothesis class
+    \begin{equation}
+        \mathcal{H}_x
+        := \bigl\{\, h|_{S'} : h\in\mathcal{H},\;
+            \exists\,h' \in \mathcal{H}
+            \text{ with } h'(x)\neq h(x),\ h'|_{S'}=h|_{S'} \bigr\}.
+    \end{equation}
+    Then $\mathcal{B}$ is precisely $\mathcal{H}_x$ viewed as a set of labelings on $S'$,
+    so $|\mathcal{B}| \le m_{\mathcal{H}_x}(n-1)$.
+    
+    We claim that
+    \begin{equation}
+        \mathrm{dvc}(\mathcal{H}_x) \le d-1.
+    \end{equation}
+    Otherwise, suppose $\mathcal{H}_x$ shatters some $T \subseteq S'$ with $|T|=d$.
+    By the definition of $\mathcal{H}_x$, for every labeling $y_T$ on $T$
+    and either choice of label $y_x \in \{-1,+1\}$ at $x$, there exists $h\in\mathcal{H}$
+    such that
+    \begin{equation}
+        h|_{T} = y_T, \qquad h(x) = y_x.
+    \end{equation}
+    Hence $\mathcal{H}$ can realize all labelings on $T \cup \{x\}$,
+    so $\mathcal{H}$ shatters a set of size $d+1$, contradicting
+    $\mathrm{dvc}(\mathcal{H}) = d$.
+    Thus the claim holds.
+    
+    By the induction hypothesis applied to $\mathcal{H}$ on $n-1$ points
+    and to $\mathcal{H}_x$ whose VC dimension is at most $d-1$, we obtain
+    \begin{equation}
+        |\mathcal{A}| \le \sum_{i=0}^{d} \binom{n-1}{i},
+        \qquad
+        |\mathcal{B}| \le \sum_{i=0}^{d-1} \binom{n-1}{i}.
+    \end{equation}
+    Therefore,
+    \begin{align}
+        |\mathcal{H}|_S|
+        &\le \sum_{i=0}^{d} \binom{n-1}{i}
+           + \sum_{i=0}^{d-1} \binom{n-1}{i} \\
+        &= \sum_{i=0}^{d} \left( \binom{n-1}{i} + \binom{n-1}{i-1} \right) \\
+        &= \sum_{i=0}^{d} \binom{n}{i}.
+    \end{align}
+    \end{proof}
+    \begin{note}
+        The inductive structure of the proof for the Sauer--Shelah Lemma is deeply reminiscent
+        of strategies used in \emph{mathematical logic}, particularly in proving
+        \emph{completeness theorems} that connect syntactic derivability and semantic truth.
+        In both settings, we start by imposing an ordering (or enumeration) on a collection
+        of objects—whether they are formulas, sentences, or finite subsets of $\mathcal{X}$—so that
+        induction can be applied coherently.
+        
+        Just as in logic we construct models step by step according to a fixed sequence
+        of formulas (often by extending consistent sets in a well-ordered fashion),
+        here we inductively analyze the growth of $\mathcal{H}$ by removing or reintroducing one
+        element of the sample set at a time.  
+        The key similarity is structural: both arguments rely on well-founded recursion over
+        a totally ordered domain to control how local extensions (adding one more formula or one more
+        point) affect global consistency or combinatorial growth.
+        \end{note}
+        
+    \begin{remark}
+    Plugging this bound into the standard uniform convergence inequality
+    for a finite hypothesis class, we obtain a generalization bound of the form
+    \begin{equation}
+        \varepsilon
+        \;=\;
+        \sqrt{\frac{1}{2n}\,\log \frac{M}{\delta}}\sim O\left(\frac{\mathrm{dvc}\log n}{n}\right)^{1/2}
+    \end{equation}
+    Thus, when $\mathrm{dvc}(\mathcal{H})$ is finite, the estimation error
+    $\varepsilon$ decreases as $n$ grows, with the complexity of the class
+    entering only through the polynomial factor controlled by $d$.
+    \end{remark}
+    It can be rigorously shown that:
+
+    \begin{theorem}[VC Generalization Bound]
+    With probability at least $1-\delta$, the following inequality holds:
+    \begin{equation}
+        E_{\rm out}(h_i) - E_{\rm in}(h_i)
+        < \sqrt{\frac{8}{n}\log\frac{4m_{\mathcal{H}}(2n)}{\delta}}.
+    \end{equation}
+    Moreover,
+    \begin{equation}
+        E_{\rm out}(h_i) - E_{\rm in}(h_i)
+        = O\!\left(\sqrt{\frac{\mathrm{d_{VC}}\log n}{n}}\right)
+        \xrightarrow[n\to\infty]{} 0.
+    \end{equation}
+    \end{theorem}
+    
+    Although the VC generalization bound is relatively loose in practice,  
+    its importance lies in converting an inherently infinite hypothesis space into a finitely bounded one.  
+    This theorem establishes a concrete analytical foundation for the entire field of machine learning,  
+    demonstrating that with sufficient data, generalization is not merely empirical, but theoretically guaranteed.
+\end{document}

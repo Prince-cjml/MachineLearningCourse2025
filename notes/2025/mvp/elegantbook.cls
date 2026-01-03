@@ -914,16 +914,18 @@
       lower separated=false,
       % before upper={\setlength{\parindent}{\normalparindent}},
       coltitle=white,
+    after skip=12pt,
+      left=12pt, right=12pt, top=6pt, bottom=6pt,
       colback=gray!5,
-      boxrule=0.5pt,
+      boxrule=0pt,
       fonttitle=\bfseries,
       enhanced,
       breakable,
       top=8pt,
-      before skip=8pt,
+      before skip=12pt,
       attach boxed title to top left={
-        yshift=-0.11in,
-        xshift=0.15in},
+        yshift=-0.05in,
+        xshift=0.1in},
       boxed title style={
         boxrule=0pt,
         colframe=white,
@@ -1159,43 +1161,138 @@
 \setcounter{exam}{0}
 \renewcommand{\theexam}{\thechapter.\arabic{exam}}
 \newenvironment{example}[1][]{
-  \refstepcounter{exam}
-  \par\noindent\textbf{\color{main}{\examplename} \theexam #1 }\rmfamily}{
-  \par\ignorespacesafterend}
+  \refstepcounter{exam}% 使 \label 生效
+  \begin{tcolorbox}[enhanced, breakable,
+    colback=main!2, colframe=main!18,
+    boxrule=0.5pt, arc=2mm,
+    left=10pt, right=10pt, top=6pt, bottom=6pt,
+    before skip=10pt, after skip=10pt,
+    fonttitle=\bfseries\color{main},
+    title={\textcolor{main!80!black}{%
+      \rule{0pt}{10pt}% 顶部占位，统一标题高度
+      \examplename~\theexam%
+      \ifx\relax#1\relax\else\quad--\quad #1\fi
+    }},
+  ]
+  \rmfamily
+}{
+  \end{tcolorbox}
+}
+
+
 
 %% Exercise with counter
 \newcounter{exer}[chapter]
 \setcounter{exer}{0}
 \renewcommand{\theexer}{\thechapter.\arabic{exer}}
 \newenvironment{exercise}[1][]{
-  \refstepcounter{exer}
-  \par\noindent\makebox[-3pt][r]{
-    \scriptsize\color{red!90}\HandPencilLeft\quad}
-    \textbf{\color{main}{\exercisename} \theexer #1 }\rmfamily}{
-    \par\ignorespacesafterend}
+  \refstepcounter{exer}% 允许 \label 引用
+  \begin{tcolorbox}[enhanced, breakable,
+    colback=main!1, colframe=main!15,
+    boxrule=0.9pt, arc=2mm,
+    left=10pt, right=10pt, top=6pt, bottom=6pt,
+    before skip=10pt, after skip=10pt,
+    fonttitle=\bfseries\color{main},
+    title={\textcolor{main!80!black}{%
+      \raisebox{1pt}{\scriptsize\color{main!80!black}\HandPencilLeft}\quad
+      \exercisename~\theexer%
+      \ifx\relax#1\relax\else\quad--\quad #1\fi
+    }},
+  ]
+  \rmfamily
+}{
+  \end{tcolorbox}
+}
 
 %% Problem with counter
 \newcounter{prob}[chapter]
 \setcounter{prob}{0}
 \renewcommand{\theprob}{\thechapter.\arabic{prob}}
 \newenvironment{problem}[1][]{
-  \refstepcounter{prob}
-  \par\noindent\textbf{\color{main}{\problemname} \theprob #1 }\rmfamily}{
-  \par\ignorespacesafterend}
+  \refstepcounter{prob}% 支持 \label
+  \begin{tcolorbox}[enhanced, breakable,
+    colback=main!1, colframe=main!15,
+    boxrule=0.9pt, arc=2mm,
+    left=10pt, right=10pt, top=6pt, bottom=6pt,
+    before skip=10pt, after skip=10pt,
+    fonttitle=\bfseries\color{main},
+    title={\textcolor{main!80!black}{%
+      \rule{0pt}{10pt}% 占位对齐标题高度
+      \problemname~\theprob%
+      \ifx\relax#1\relax\else\quad--\quad #1\fi
+    }},
+  ]
+  \rmfamily
+}{
+  \end{tcolorbox}
+}
 
-\newenvironment{note}{
-  \par\noindent\makebox[-3pt][r]{
-    \scriptsize\color{red!90}\textdbend\quad}
-    \textbf{\color{second}\notename} \citshape}{\par}
 
-\newenvironment{proof}{
-  \par\noindent\textbf{\color{second}\proofname\;}
-  \color{black!90}\cfs}{
-  % \hfill$\Box$\quad
-  \par}
+  \newenvironment{note}{
+    \begin{tcolorbox}[enhanced, breakable,
+      colback=second!2, colframe=second!13,
+      boxrule=1pt, arc=2mm,parbox=false,
+      left=10pt, right=10pt, top=6pt, bottom=6pt,
+      before skip=10pt, after skip=10pt,
+      title={\textcolor{second}{{\fontsize{7.5pt}{9pt}\selectfont\textdbend}\; \raisebox{2.5pt}{\notename}}},
+      fonttitle=\bfseries\color{second},
+    ]\setlength{\parindent}{0em}
+    \citshape
+  }{
+    % \hfill{\color{second}$\Box$}
+    \end{tcolorbox}
+  }
 
-\newenvironment{solution}{\par\noindent\textbf{\color{main}\solutionname} \citshape}{\par}
-\newenvironment{remark}{\noindent\textbf{\color{second}\remarkname}}{\par}
+  \newenvironment{proof}{
+    \begin{tcolorbox}[enhanced, breakable,
+      colback=second!3, colframe=second!3,
+      boxrule=1pt, arc=0mm,
+      left=3pt, right=3pt, top=6pt, bottom=6pt,
+      before skip=10pt, after skip=10pt,
+      title={\textcolor{second}{\rule{0pt}{10pt}\raisebox{0pt}{\proofname}}},
+      fonttitle=\bfseries\color{second},
+    ]\setlength{\parskip}{0.5em}
+    \citshape
+  }{
+    \hfill{\color{second}$\blacksquare$}
+    \end{tcolorbox}
+  }
+
+% \newenvironment{proof}{
+%   \par\noindent\textbf{\color{second}\proofname\;}
+%   \color{black!90}\cfs}{
+%   \hfill\color{second}$\blacksquare $\quad
+%   \par}
+
+\newenvironment{solution}{
+  \begin{tcolorbox}[enhanced, breakable,
+    colback=main!3, colframe=main!3,
+    boxrule=1pt, arc=0mm,
+    left=3pt, right=3pt, top=6pt, bottom=6pt,
+    before skip=10pt, after skip=10pt,
+    title={\textcolor{main}{\rule{0pt}{10pt}\raisebox{0pt}{\solutionname}}},
+    fonttitle=\bfseries\color{main},
+  ]
+  \citshape
+}{
+  % \hfill{\color{main}$\Box$}
+  \end{tcolorbox}
+}
+\newenvironment{remark}{
+    \begin{tcolorbox}[enhanced, breakable,
+      colback=third!2, colframe=third!13,
+      boxrule=0.5pt, arc=2mm,
+      left=10pt, right=10pt, top=6pt, bottom=6pt,
+      before skip=10pt, after skip=10pt,
+      title={\textcolor{third!80!black}{\rule{0pt}{10pt}\raisebox{1pt}{\remarkname}}},
+      fonttitle=\bfseries\color{third},
+    ]
+    \citshape
+  }{
+    % \hfill{\color{second}$\Box$}
+    \end{tcolorbox}
+  }
+
 \newenvironment{assumption}{\par\noindent\textbf{\color{third}\assumptionname} \citshape}{\par}
 \newenvironment{conclusion}{\par\noindent\textbf{\color{third}\conclusionname} \citshape}{\par}
 \newenvironment{property}{\par\noindent\textbf{\color{third}\propertyname} \citshape}{\par}
@@ -1222,13 +1319,13 @@
 }
 
 
-\newenvironment{introduction}[1][\introductionname]{
+\newenvironment{introduction}[1][\textcolor{structurecolor}{.}\;\introductionname\;\textcolor{structurecolor}{.}]{
   \begin{tcolorbox}[introductionsty,title={#1}]
     \begin{multicols}{2}
       \begin{itemize}[label=\textcolor{structurecolor}{\upshape\scriptsize\SquareShadowBottomRight}]}{
       \end{itemize}
     \end{multicols}
-  \end{tcolorbox}}
+  \end{tcolorbox}\vspace{1em}}
 
 \RequirePackage{adforn}
 

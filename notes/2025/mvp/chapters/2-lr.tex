@@ -9,9 +9,9 @@
 \item Maximum a posteriori
 \end{introduction}
 \section{Classification}
-\begin{example}
-  \textbf{Binary Classification Problem}
-\end{example}
+
+  \subsection{Binary Classification Problem}
+
 Settings.
 \begin{itemize}
   \item Dataset: $D=\{(x_i,y_i)\}_{i=1}^n$, where $x_i\in\mathbb{R}^d$ and $y_i\in\{0,1\}$.  
@@ -58,7 +58,7 @@ We ensure this property by choosing the orientation of $w$ accordingly.
   \centering
   \includegraphics{../../tikz/2/2.pdf}
   \caption{Classification by heperplane.}
-  \label{2-lr}
+  \label{fig:2-hyperplane}
 \end{figure}
 
 
@@ -182,7 +182,7 @@ If for all $i$, we have $y_i = P(y=1 \mid x_i)$, then the model predicts every l
   If all points can be separated by a linear model without error, we say the dataset is {linearly separable}.
 \end{definition}
 
-Example \ref{2-lr} is linearly separable, and the final state leads to $\|W\| \to \infty, \quad \|b\| \to \infty$. However, this situation is not desirable in practice, since it implies poor robustness. Hence a natural question arises: under the condition of linear separability, how can we find a well-chosen separating hyperplane that maximizes robustness? The answer will be presented in the next chapter, where we introduce the Support Vector Machine (SVM). The SVM optimizes $\hat w, \hat b$ by maximizing the margin (the distance between data points and the separating hyperplane), instead of simply minimizing the cross-entropy loss.
+Figure~\ref{fig:2-hyperplane} illustrates a linearly separable setting, and the final state leads to $\|W\| \to \infty, \quad \|b\| \to \infty$. However, this situation is not desirable in practice, since it implies poor robustness. Hence a natural question arises: under the condition of linear separability, how can we find a well-chosen separating hyperplane that maximizes robustness? The answer will be presented in the next chapter, where we introduce the Support Vector Machine (SVM). The SVM optimizes $\hat w, \hat b$ by maximizing the margin (the distance between data points and the separating hyperplane), instead of simply minimizing the cross-entropy loss.
 
 Although logistic regression may suffer from divergence of parameters under separable data, it often achieves better performance than SVM in practice, due to the following reasons:
 \begin{enumerate}
@@ -194,9 +194,9 @@ Although logistic regression may suffer from divergence of parameters under sepa
 \end{remark}
 \vspace{1em}
 
-\begin{example}
-  \textbf{Multi-Class Classificaiton (Softmax Regression)}
-\end{example}
+
+  \subsection{Multi-Class Classificaiton (Softmax Regression)}
+
 We can combine $k$ sub-classifiers to solve a $k$-class classification task. 
 Specifically, we apply a sigmoid-like transformation to each sub-linear model 
 $f_k(x) = w_k^\top x + b_k$, and obtain the probability of class $k$ using a normalized expression:
@@ -249,9 +249,9 @@ which leads to the following optimization problem:
   via the reparameterization $w = w_1 - w_2$ and $b = b_1 - b_2$.
 \end{remark}
 \section{Rethink of Linear Regression}
-\begin{example}
-  \textbf{MLE Explanation for Linear Regression}
-\end{example}
+
+  \subsection{MLE Explanation for Linear Regression}
+
 \begin{definition}[Gaussian/Normal Distribution]
     \begin{equation}
         x\sim\mathcal N(\mu,\sigma^2)\quad\Leftrightarrow\quad P(x)=\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
@@ -261,7 +261,7 @@ which leads to the following optimization problem:
   \centering
   \includegraphics{../../tikz/2/3.pdf}
   \caption{Normal distribution (95\%).}
-  \label{2-lr}
+  \label{fig:2-normal}
 \end{figure}
 While the Central Limit Theorem (CLT) does not imply that most datasets are normally distributed, 
 it motivates modeling additive noise as Gaussian. We assume:
@@ -289,8 +289,8 @@ The log-likelihood takes the form:
 \end{align}
 where the equivalence follows by dropping constants and positive scalings. 
 Equation~\eqref{2.24} recovers ERM with the squared-loss objective.
-\begin{example}\textbf{Maximum a Posteriori (MAP)}
-\end{example}
+\subsection{Maximum a Posteriori (MAP)}
+
   In the MLE perspective, $w$ and $b$ are treated as unknown fixed constants. 
   In the Bayesian framework, however, even $w,b$ are considered as random variables (R.V.). 
   A  ``fixed constant'' can be seen as a random variable with an extremely sharp distribution (near $\delta$-distribution).
@@ -314,9 +314,9 @@ Equation~\eqref{2.24} recovers ERM with the squared-loss objective.
     P(\hat w \mid y,x) 
     &= \frac{1}{Z}
        \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)^n
-       \exp\!\left(-\frac{1}{2\sigma^2}\sum_{i\in[n]} \big(y_i-\hat w^\top \hat x_i\big)^2\right) 
+       \exp\left(-\frac{1}{2\sigma^2}\sum_{i\in[n]} \big(y_i-\hat w^\top \hat x_i\big)^2\right) 
        \left(\frac{1}{\sqrt{2\pi\sigma_w^2}}\right)^{d+1}
-       \exp\!\left(-\frac{\hat w^\top \hat w}{2\sigma_w^2}\right)
+       \exp\left(-\frac{\hat w^\top \hat w}{2\sigma_w^2}\right)
   \end{align*}
   
   Taking the negative logarithm of the posterior, note that only the terms involving $\hat w$ are subject to optimization:
