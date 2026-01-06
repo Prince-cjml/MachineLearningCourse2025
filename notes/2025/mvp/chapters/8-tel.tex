@@ -63,7 +63,7 @@ credible intervals that quantify uncertainty.
 An important application of GP regression is \emph{Bayesian Optimization} (BO),
 which addresses \emph{black-box optimization} problems:
 \begin{equation}
-    \max_{x\in\mathcal{X}} f(x),
+    \argmax_{x\in\mathcal{X}} f(x),
 \end{equation}
 where:
 \begin{itemize}
@@ -965,7 +965,7 @@ Intuitively, each bootstrap sample $D^{(m)}$ can be viewed as a noisy version
 of the original dataset.  The base learners $f_m$ will differ from one another,
 and averaging their predictions cancels out part of the randomness.
 
-\begin{remark}[Variance Reduction]
+\begin{remark}
     Consider a simplified setting where we average $M$ identically distributed
     base predictors $f_1,\dots,f_M$ for regression, each with variance
     $\sigma^2$ and pairwise correlation $\rho$.  Then the variance of the
@@ -1082,6 +1082,183 @@ each iteration.
     \includegraphics{../../tikz/8/7.pdf}
 \end{figure}
 
+AdaBoost can be derived as stagewise minimization of the exponential loss
+\[
+    \mathcal L(F)=\sum_{i=1}^n \exp\bigl(-y_i F(x_i)\bigr),
+    \qquad y_i\in\{-1,+1\}.
+\]
+Suppose at round $m$ we update
+\[
+    F_m(x)=F_{m-1}(x)+\alpha h(x),
+    \qquad h(x)\in\{-1,+1\}.
+\]
+Then
+\begin{align}
+    \mathcal L(F_m)
+    &=\sum_{i=1}^n \exp\bigl(-y_i(F_{m-1}(x_i)+\alpha h(x_i))\bigr)\notag\\
+    &=\sum_{i=1}^n \exp\bigl(-y_iF_{m-1}(x_i)\bigr)\exp\bigl(-\alpha y_i h(x_i)\bigr).
+\end{align}
+Define the normalized weights (sigmoid)
+\[
+    w_i^{(m)}=\frac{\exp\bigl(-y_iF_{m-1}(x_i)\bigr)}{\sum_{j=1}^n \exp\bigl(-y_jF_{m-1}(x_j)\bigr)}
+\]
+Minimizing $\mathcal L(F_m)$ w.r.t.\ $\alpha$ is equivalent to minimizing
+\[
+    Z(\alpha):=\sum_{i=1}^n w_i^{(m)}\exp\bigl(-\alpha y_i h(x_i)\bigr).
+\]
+Let the weighted error of $h$ under $w^{(m)}$ be
+\[
+    \varepsilon=\sum_{i=1}^n w_i^{(m)}\,\mathbb 1\bigl(h(x_i)\neq y_i\bigr).
+\]
+Note that $y_i h(x_i)=+1$ if the point is correctly classified and
+$y_i h(x_i)=-1$ otherwise. Splitting the sum into correct vs.\ incorrect sets,
+\[
+    Z(\alpha)=(1-\varepsilon)e^{-\alpha}+\varepsilon e^{\alpha}.
+\]
+Differentiate and set to zero:
+\[
+    \frac{\mathrm d Z}{\mathrm d\alpha}=-(1-\varepsilon)e^{-\alpha}+\varepsilon e^{\alpha}=0
+    \quad\Longrightarrow\quad
+    e^{2\alpha}=\frac{1-\varepsilon}{\varepsilon}.
+\]
+Hence the minimizer is
+\[
+    \alpha^\star=\frac12\log\frac{1-\varepsilon}{\varepsilon}.
+\]
+Substituting $\alpha^\star$ back gives the minimum
+\[
+    Z(\alpha^\star)=2\sqrt{\varepsilon(1-\varepsilon)},
+\]
+which is $<1$ whenever $\varepsilon<\frac12$. This explains why AdaBoost
+requires each weak learner to perform slightly better than random guessing.
+\begin{example}[AdaBoost]
+ Let's use AdaBoost to solve a one-dimensional binary classification problem.
+    
+    Consider five training samples with labels $y_i\in\{-1,+1\}$:
+    \[
+    \begin{array}{c|ccccc}
+    i & 1 & 2 & 3 & 4 & 5\\ \hline
+    x_i & 1 & 2 & 3 & 4 & 5\\
+    y_i & +1 & +1 & -1 & -1 & +1
+    \end{array}
+    \]
+\end{example}
+\begin{solution}
+    AdaBoost starts with uniform sample weights
+    \[
+    w_i^{(1)}=\frac{1}{5},\qquad i=1,\dots,5.
+    \]
+    
+    A decision stump is parameterized by a threshold $t$ and a polarity
+    $s\in\{+1,-1\}$:
+    \[
+    h_{t,s}(x)=
+    \begin{cases}
+    s, & x<t,\\
+    -s, & x\ge t.
+    \end{cases}
+    \]
+    
+    Since the data are one-dimensional and sorted, candidate thresholds are the
+    midpoints
+    \[
+    t\in\{1.5,\,2.5,\,3.5,\,4.5\}.
+    \]
+    
+    We evaluate the weighted classification error
+    \[
+    \varepsilon_1(t,s)
+    =\sum_{i=1}^5 w_i^{(1)}\mathbb 1\bigl(h_{t,s}(x_i)\neq y_i\bigr)
+    \]
+    for all $(t,s)$ and select the minimizer.  
+    The optimal choice is $(t_1,s_1)=(2.5,+1)$, i.e.
+    \[
+    h_1(x)=
+    \begin{cases}
+    +1,& x<2.5,\\
+    -1,& x\ge 2.5,
+    \end{cases}
+    \]
+    which misclassifies only sample $i=5$. Hence
+    \[
+    \varepsilon_1=\frac{1}{5}.
+    \]
+    
+    AdaBoost assigns the weak learner a coefficient
+    \[
+    \alpha_1=\frac12\log\frac{1-\varepsilon_1}{\varepsilon_1}
+    =\frac12\log 4=\log 2.
+    \]
+    Weights are updated according to
+    \[
+    w_i^{(2)}
+    =\frac{w_i^{(1)}\exp\bigl(-\alpha_1 y_i h_1(x_i)\bigr)}{Z_1},
+    \]
+    where $Z_1$ normalizes the weights to sum to $1$.
+    Explicitly,
+    \[
+    w^{(2)}=(0.125,\ 0.125,\ 0.125,\ 0.125,\ 0.5).
+    \]
+    The misclassified point $x_5$ now carries half of the total weight.
+    
+    Using weights $w^{(2)}$, we again evaluate all candidate stumps.  
+    The minimum weighted error is attained at $(t_2,s_2)=(4.5,-1)$:
+    \[
+    h_2(x)=
+    \begin{cases}
+    -1,& x<4.5,\\
+    +1,& x\ge 4.5,
+    \end{cases}
+    \]
+    which misclassifies only samples $i=1,2$. Therefore,
+    \[
+    \varepsilon_2=w_1^{(2)}+w_2^{(2)}=0.25.
+    \]
+    \[
+    \alpha_2=\frac12\log\frac{1-\varepsilon_2}{\varepsilon_2}
+    =\frac12\log 3.
+    \]
+    After two iterations, the AdaBoost classifier is
+    \[
+    F_2(x)=\alpha_1 h_1(x)+\alpha_2 h_2(x),
+    \qquad
+    \hat y=\operatorname{sign}\bigl(F_2(x)\bigr).
+    \]
+    We now compute the final predictions of $F_2$ on the five training samples.
+    First evaluate the two stumps:
+    \[
+    \begin{array}{c|ccccc}
+    i & 1 & 2 & 3 & 4 & 5\\ \hline
+    x_i & 1 & 2 & 3 & 4 & 5\\ \hline
+    h_1(x_i) & +1 & +1 & -1 & -1 & -1\\
+    h_2(x_i) & -1 & -1 & -1 & -1 & +1
+    \end{array}
+    \]
+    Hence, 
+    \begin{align}
+        F_2(x_1)&=\alpha_1-\alpha_2
+        =\log 2-\frac12\log 3
+        =\frac12\log\frac{4}{3}>0,\\
+        F_2(x_2)&=\alpha_1-\alpha_2
+        =\frac12\log\frac{4}{3}>0,\\
+        F_2(x_3)&=-\alpha_1-\alpha_2<0,\\
+        F_2(x_4)&=-\alpha_1-\alpha_2<0,\\
+        F_2(x_5)&=-\alpha_1+\alpha_2
+        =\frac12\log 3-\log 2
+        =\frac12\log\frac{3}{4}<0.
+    \end{align}
+    Therefore,
+    \[
+    \hat y(x_1)=+1,\quad
+    \hat y(x_2)=+1,\quad
+    \hat y(x_3)=-1,\quad
+    \hat y(x_4)=-1,\quad
+    \hat y(x_5)=-1,
+    \]
+    The last sample is still misclassified, but with a \emph{smaller margin},
+    since $F_2(x_5)=-\alpha_1+\alpha_2$ is closer to zero than
+    $F_1(x_5)=-\alpha_1$.
+\end{solution}
 \begin{note}
     From a geometric perspective, both Random Forests and boosting-based tree
     ensembles can be seen as constructing a complex, highly nonlinear decision
