@@ -121,7 +121,7 @@ MLE can be transformed into ERM by applying $\argmin$ to the negative log-likeli
       + (1-y_i) \log \big(1 - \sigma(w^\top x_i + b)\big) 
     \Big]
 \end{equation}
-Thus, minimizing the cross-entropy loss is equivalent to maximizing the log-likelihood, making the equivalence between MLE and ERM immediate
+Thus, minimizing the cross-entropy loss is equivalent to maximizing the log-likelihood, making the equivalence between MLE and ERM immediate.
 \begin{note}
   Why is the above loss called the {Cross-entropy loss}? 
   The name originates from information theory. 
@@ -143,13 +143,13 @@ Thus, minimizing the cross-entropy loss is equivalent to maximizing the log-like
 \begin{note}
   The formal definition of cross entropy between two propbability distributions $q$ and $p$ $H(q,p)$ is defined by:
   \begin{equation}
-      H(q,p)=-\sum_y q(y)\log p(y)
+      H(q,p)=-\sum_y q(y)\log p(y)=-\mathbb E_q\log p(y)
   \end{equation}
 \end{note}
 \begin{definition}[KL-Divergence]
   The KL-Divergence between two distributions $p$ and $q$ is defined by:
     \begin{equation}
-        \mathrm{KL}(q\Vert p)=\sum_y q(y)\log\frac{q(y)}{p(y)}
+        \mathrm{KL}(q\Vert p)=\sum_y q(y)\log\frac{q(y)}{p(y)}:=\mathbb E_q\log\frac{q(y)}{p(y)}
     \end{equation}
 \end{definition}
 KL-Divergence measures the difference between two given distributions. 
@@ -282,7 +282,7 @@ The log-likelihood takes the form:
   \argmax_{w,b}\; \sum_{i\in[n]}\log \mathcal N\!\big(y_i \,\big|\, w^\top x_i + b,\; \sigma^2\big)
   &= \argmax_{w,b}\; \sum_{i\in[n]}
      \left[
-       -\tfrac{1}{2}\log(2\pi\sigma^2)
+       -\frac{1}{2}\log(2\pi\sigma^2)
        - \frac{\big(y_i-(w^\top x_i+b)\big)^2}{2\sigma^2}
      \right]\notag\\
   &\;\Leftrightarrow\; \argmin_{w,b}\; \sum_{i\in[n]}\big(y_i-(w^\top x_i+b)\big)^2, \label{2.24}
